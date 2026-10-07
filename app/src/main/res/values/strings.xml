@@ -1,3 +1,10 @@
 <resources>
-    <string name="app_name">PuzzleBubbles</string>
+    <string name="app_name">Puzzle Bubbles</string>
+    <string name="game_coming_soon">Game coming soon</string>
+    <string name="choose_it_placeholder">Listen and choose a picture.</string>
+    <string name="matching_placeholder">Find the pictures that go together.</string>
+    <string name="back">Back</string>
+    <string name="home_welcome">WELCOME TO</string>
+    <string name="home_question">What would you like to play?</string>
+    <string name="home_hint">Pick a game. Let\'s go!</string>
 </resources>

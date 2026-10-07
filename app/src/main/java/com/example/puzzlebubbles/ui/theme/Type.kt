@@ -1,37 +1,30 @@
 package com.example.puzzlebubbles.ui.theme
 
 import androidx.compose.material3.Typography
-import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.ExperimentalTextApi
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
-
-import androidx.compose.ui.text.googlefonts.GoogleFont
-import androidx.compose.ui.text.googlefonts.Font
 import com.example.puzzlebubbles.R
 
-val provider = GoogleFont.Provider(
-    providerAuthority = "com.google.android.gms.fonts",
-    providerPackage = "com.google.android.gms",
-    certificates = R.array.com_google_android_gms_fonts_certs
+val GameTitleFontFamily = FontFamily(Font(R.font.lilita_one))
+
+@OptIn(ExperimentalTextApi::class)
+val HomeHeadingFontFamily = FontFamily(
+    Font(R.font.baloo_2, weight = FontWeight.Normal,
+        variationSettings = FontVariation.Settings(FontVariation.weight(400))),
+    Font(R.font.baloo_2, weight = FontWeight.Bold,
+        variationSettings = FontVariation.Settings(FontVariation.weight(700))),
+    Font(R.font.baloo_2, weight = FontWeight.ExtraBold,
+        variationSettings = FontVariation.Settings(FontVariation.weight(800))),
 )
 
-val bodyFontFamily = FontFamily(
-    Font(
-        googleFont = GoogleFont("ABeeZee"),
-        fontProvider = provider,
-    )
-)
-
-val displayFontFamily = FontFamily(
-    Font(
-        googleFont = GoogleFont("Reem Kufi Fun"),
-        fontProvider = provider,
-    )
-)
+private val bodyFontFamily = FontFamily.SansSerif
+private val displayFontFamily = FontFamily.SansSerif
 
 // Default Material 3 typography values
-val baseline = Typography()
+private val baseline = Typography()
 
 val PuzzleBubblesTypography = Typography(
     displayLarge = baseline.displayLarge.copy(fontFamily = displayFontFamily),
@@ -50,4 +43,3 @@ val PuzzleBubblesTypography = Typography(
     labelMedium = baseline.labelMedium.copy(fontFamily = bodyFontFamily),
     labelSmall = baseline.labelSmall.copy(fontFamily = bodyFontFamily),
 )
-

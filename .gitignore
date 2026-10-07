@@ -1,0 +1,21 @@
+# Local Gradle/Kotlin state and generated build output
+.gradle/
+.kotlin/
+build/
+.externalNativeBuild/
+.cxx/
+*.iml
+
+# Local Android SDK configuration
+/local.properties
+
+# Machine-specific Android Studio state (keep shared project settings)
+/.idea/caches/
+/.idea/workspace.xml
+/.idea/shelf/
+/.idea/deploymentTargetSelector.xml
+/.idea/deploymentTargetDropDown.xml
+/.idea/deviceManager.xml
+/.idea/copilot.data.migration.ask2agent.xml
+/.idea/studiobot.xml
+/.idea/migrations.xml

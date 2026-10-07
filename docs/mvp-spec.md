@@ -1,0 +1,650 @@
+# Puzzle Bubbles — MVP Specification
+
+## 1. Product
+
+**Puzzle Bubbles** is a simple educational game for young children.
+
+The first version contains two simple game mechanics:
+
+1. **Choose It** — the child hears a sound and chooses the matching image.
+2. **Matching** — the child matches images from one side with images on the other side.
+
+The product will be developed iteratively.
+
+The first version should contain only enough functionality to establish the core architecture and make these two mechanics playable.
+
+Categories, topics, difficulty levels, sound types, and other content organization may be introduced later when needed.
+
+## 2. First Iteration Scope
+
+The first iteration is a **local-only Android application**.
+
+There is:
+
+- no backend;
+- no authentication;
+- no user accounts;
+- no synchronization;
+- no analytics;
+- no remote content management;
+- no content categories;
+- no game subcategories;
+- no sound-mode selection.
+
+All game content is available locally.
+
+Local content consists of:
+
+1. **Structured game data**
+   - rounds;
+   - image choices;
+   - matching relationships;
+   - asset IDs;
+   - labels and other metadata when needed.
+
+2. **Binary assets**
+   - images;
+   - sounds.
+
+Binary image/audio files should **not be stored as blobs in Room**.
+
+Initially:
+
+- optimized images are stored as Android resources;
+- optimized audio files are stored as Android resources;
+- structured game data may be stored as bundled JSON or similar local data;
+- Room may be introduced later if persistent structured storage becomes useful.
+
+The data model must remain independent from local persistence and asset-storage details so that content can later move to a backend/CDN without redesigning the game logic.
+
+## 3. Platform
+
+Frontend:
+
+- Native Android
+- Kotlin
+- Jetpack Compose
+
+Local data:
+
+- Android resources for image and audio files;
+- bundled JSON or similar structured data for initial static game data;
+- Room only when persistent structured local storage is actually needed;
+- Room must not be used to store image/audio blobs.
+
+Game/domain models must not depend directly on:
+
+- Room entities;
+- Android resource IDs;
+- filesystem paths;
+- URLs.
+
+Use stable asset IDs at the domain level.
+
+Example:
+
+```text
+cat-image
+cat-audio
+```
+
+The data layer is responsible for resolving these IDs to their current physical location.
+
+## 4. Navigation
+
+The Figma home design uses the child-facing names **What's That?** for Choose It
+and **Match Up** for Matching. These are display names only: mechanic types and
+stable catalog IDs (`choose-it`, `matching`) remain unchanged. The home uses the
+corresponding `game-types` artwork as card backgrounds with colored title bars.
+
+Development milestone 001 implements the home catalog and navigation only.
+Choose It and Matching open distinct placeholder destinations with normal Back
+navigation. Game mechanics and sound remain deferred; this milestone does not
+fulfill the playable MVP definition of done in section 16.
+
+The first screen is a list of available game mechanics.
+
+Initial items:
+
+1. **Choose It**
+2. **Matching**
+
+Each item is represented by a large child-friendly card with:
+
+- title;
+- cover image.
+
+Selecting a card opens that game directly.
+
+Navigation:
+
+```text
+HomeScreen
+│
+├── Choose It
+│   └── ChooseItGameScreen
+│
+└── Matching
+    └── MatchingGameScreen
+```
+
+There is no intermediate category-selection screen in the first iteration.
+
+## 5. Game Type 1 — Choose It
+
+### Purpose
+
+The child hears a sound and chooses the image that corresponds to that sound.
+
+The game engine does not need to understand what kind of sound it is.
+
+The sound may represent:
+
+- a spoken word;
+- an animal sound;
+- a vehicle sound;
+- music;
+- another audio cue.
+
+For the MVP, the exact content is simply provided as local game data.
+
+The mechanic only needs to know:
+
+```text
+play this sound
+show these images
+this image is correct
+```
+
+### Example
+
+Audio:
+
+```text
+cat_audio
+```
+
+Images:
+
+- cat
+- dog
+- pig
+
+Correct answer:
+
+- cat
+
+The game must not infer why the sound matches the image.
+
+The relationship is explicit in the data.
+
+### Game Flow
+
+1. A round starts.
+2. The round's audio is played.
+3. Several image choices are displayed.
+4. The child taps one image.
+5. The application shows whether the answer is correct.
+6. If correct, the game proceeds to the next round.
+
+For the first iteration, use **three image choices per round**.
+
+### Interaction
+
+The screen should contain:
+
+- a large play/replay button;
+- three selectable image cards;
+- feedback after selection.
+
+If the child selects an incorrect image:
+
+- give simple visual feedback;
+- keep the round active;
+- allow another choice.
+
+If the child selects the correct image:
+
+- give positive visual feedback;
+- briefly show completion state;
+- move to the next round.
+
+The sound should play once when the round opens and should be replayable.
+
+No scoring is required in the first iteration.
+
+### Example Content
+
+```text
+soundAssetId: cat-audio
+
+choices:
+  - cat
+  - dog
+  - pig
+
+correctChoiceId: cat
+```
+
+## 6. Game Type 2 — Matching
+
+### Purpose
+
+The child matches images from one side with corresponding images on the other side.
+
+The game engine does not need to understand the semantic reason for the relationship.
+
+For example, the supplied data might represent:
+
+```text
+rabbit → carrot
+monkey → banana
+dog → bone
+```
+
+or:
+
+```text
+bird → nest
+bee → hive
+fish → water
+```
+
+But the engine only needs to know which image IDs form valid pairs.
+
+### Game Flow
+
+The screen shows two groups of images.
+
+Example:
+
+Left:
+
+- rabbit
+- monkey
+- dog
+
+Right:
+
+- banana
+- bone
+- carrot
+
+The child matches each item from the left side with one item from the right side.
+
+The display order may be randomized.
+
+### Interaction
+
+For the first iteration, use **tap-to-match**.
+
+Example:
+
+1. Child taps rabbit.
+2. Rabbit becomes selected.
+3. Child taps carrot.
+4. If correct, the pair becomes completed.
+5. If incorrect, visual feedback is shown and the pair remains unmatched.
+
+The round is complete when all pairs are matched.
+
+Drag-and-drop or line-drawing interactions may be considered later.
+
+No score or timer is required.
+
+### Example Content
+
+```text
+pairs:
+  rabbit -> carrot
+  monkey -> banana
+  dog -> bone
+```
+
+The game does not need categories such as `animal`, `food`, or `home`.
+
+Those concepts may exist later for content organization, but they are not part of the MVP game model.
+
+## 7. Core Content Model
+
+Content should be represented as generic domain data rather than hard-coded directly inside composables.
+
+Binary assets and structured game data are separate concerns.
+
+The domain model references assets using stable IDs.
+
+Conceptually:
+
+```kotlin
+data class MediaAsset(
+    val id: String,
+    val type: MediaType
+)
+
+enum class MediaType {
+    IMAGE,
+    AUDIO
+}
+```
+
+The domain model should **not** contain Android resource identifiers such as:
+
+```kotlin
+R.drawable.cat
+R.raw.cat_audio
+```
+
+It should also not depend directly on filesystem paths or remote URLs.
+
+The data/infrastructure layer resolves an asset ID to its actual source.
+
+For the MVP:
+
+```text
+cat-image
+    ↓
+Android drawable resource
+
+cat-audio
+    ↓
+Android raw resource
+```
+
+In a future backend-driven version:
+
+```text
+cat-image
+    ↓
+CDN URL
+
+cat-audio
+    ↓
+CDN URL
+```
+
+Game definitions should remain unchanged regardless of where the binary asset is physically stored.
+
+## 8. Choose It Model
+
+Conceptually:
+
+```kotlin
+data class ChooseItGame(
+    val id: String,
+    val title: String,
+    val coverImageAssetId: String,
+    val rounds: List<ChooseItRound>
+)
+
+data class ChooseItRound(
+    val id: String,
+    val soundAssetId: String,
+    val choices: List<ImageChoice>,
+    val correctChoiceId: String
+)
+
+data class ImageChoice(
+    val id: String,
+    val imageAssetId: String
+)
+```
+
+The UI must not infer the correct answer from filenames, array positions, spoken text, or asset names.
+
+The correct relationship must be explicit in the data.
+
+## 9. Matching Model
+
+Conceptually:
+
+```kotlin
+data class MatchingGame(
+    val id: String,
+    val title: String,
+    val coverImageAssetId: String,
+    val pairs: List<MatchingPair>
+)
+
+data class MatchingPair(
+    val id: String,
+    val leftImageAssetId: String,
+    val rightImageAssetId: String
+)
+```
+
+Example:
+
+```text
+pairs:
+  rabbit-image -> carrot-image
+  monkey-image -> banana-image
+  dog-image -> bone-image
+```
+
+The UI is responsible for presentation order.
+
+Stored data represents relationships, not layout positions.
+
+## 10. Game Catalog
+
+Top-level games should be discoverable from a common catalog.
+
+Conceptually:
+
+```kotlin
+data class GameDefinition(
+    val id: String,
+    val title: String,
+    val type: GameType,
+    val coverImageAssetId: String
+)
+
+enum class GameType {
+    CHOOSE_IT,
+    MATCHING
+}
+```
+
+Initial catalog:
+
+```text
+choose-it
+matching
+```
+
+The home screen should render these items from catalog data rather than containing individually hard-coded navigation buttons.
+
+## 11. Architecture
+
+Prefer a simple layered architecture.
+
+```text
+UI
+↓
+ViewModel / game state
+↓
+Domain
+↓
+Repository
+↓
+Local structured data + asset resolver
+```
+
+For example:
+
+```text
+presentation/
+domain/
+data/
+```
+
+Avoid adding architecture layers unless they solve a current problem.
+
+Important principles:
+
+**Compose UI must not know whether game metadata comes from JSON, Room, or a future backend.**
+
+**Compose UI must not know whether an image/audio asset comes from Android resources, local files, or a future CDN.**
+
+Example:
+
+```kotlin
+interface GameRepository {
+    suspend fun getGameCatalog(): List<GameDefinition>
+    suspend fun getChooseItGame(id: String): ChooseItGame
+    suspend fun getMatchingGame(id: String): MatchingGame
+}
+```
+
+Asset resolution is a separate concern.
+
+Conceptually:
+
+```kotlin
+interface AssetResolver {
+    fun resolveImage(assetId: String): ImageSource
+    fun resolveAudio(assetId: String): AudioSource
+}
+```
+
+The exact implementation types can be decided during development and should not be generalized prematurely.
+
+Initial architecture:
+
+```text
+GameRepository
+    ↓
+LocalGameRepository
+    ↓
+bundled JSON / optional Room metadata
+
+AssetResolver
+    ↓
+Android drawable/raw resources
+```
+
+Possible future architecture:
+
+```text
+GameRepository
+    ↓
+RemoteGameRepository
+    ↓
+HTTP API
+
+AssetResolver
+    ↓
+local cache / CDN URLs
+```
+
+The presentation and game logic should not need fundamental changes.
+
+## 12. State
+
+Game state is separate from game content.
+
+For example, Choose It may contain:
+
+```kotlin
+data class ChooseItUiState(
+    val roundIndex: Int,
+    val selectedChoiceId: String?,
+    val result: AnswerResult?,
+    val isSoundPlaying: Boolean
+)
+```
+
+Matching may contain:
+
+```kotlin
+data class MatchingUiState(
+    val selectedLeftId: String?,
+    val completedPairIds: Set<String>
+)
+```
+
+Do not mutate the original game content to represent progress.
+
+## 13. UX Principles
+
+The target user is a young child.
+
+Therefore:
+
+- large touch targets;
+- very little text;
+- images are the primary interaction mechanism;
+- clear visual feedback;
+- forgiving interactions;
+- no complex menus;
+- no unnecessary confirmation dialogs;
+- no time pressure;
+- wrong answers should not feel punitive.
+
+Sounds, animation, haptics and richer visual feedback can be expanded in later iterations.
+
+## 14. Explicitly Out of Scope
+
+Do not implement yet:
+
+- backend;
+- networking;
+- login;
+- profiles;
+- cloud synchronization;
+- parental dashboard;
+- progress history;
+- achievements;
+- scoring;
+- leaderboards;
+- ads;
+- purchases;
+- configurable difficulty;
+- content download;
+- content categories;
+- content topics;
+- sound-type categories;
+- intermediate content-selection screens;
+- complex animation framework.
+
+Do not build abstractions solely for these future features.
+
+## 15. Future Content Organization
+
+Later versions may introduce additional organization such as:
+
+- categories;
+- topics;
+- difficulty;
+- sound types;
+- themed groups;
+- selectable content collections.
+
+These are intentionally not modeled in the MVP.
+
+They should be introduced only when a concrete product requirement makes them necessary.
+
+## 16. Initial Definition of Done
+
+The first usable version is complete when:
+
+1. The app launches into the game list.
+2. The list contains Choose It and Matching.
+3. Each game has a title and cover image.
+4. Choose It opens directly into gameplay.
+5. Matching opens directly into gameplay.
+6. Choose It supports multiple local rounds.
+7. Each Choose It round can play and replay one supplied audio asset.
+8. Each Choose It round displays three image choices.
+9. The child can select an image.
+10. Correct and incorrect selections produce clear feedback.
+11. Matching displays multiple supplied image pairs.
+12. The child can complete pairs using tap-to-match.
+13. The game detects when all pairs are complete.
+14. Game content is loaded through a repository abstraction.
+15. Game content is not hard-coded inside Compose UI.
+16. Domain models do not depend on Android persistence classes.
+17. Domain models do not depend on Android resource IDs.
+18. Images and audio are stored as files/resources rather than Room blobs.
+19. Structured metadata may use JSON or Room independently of binary asset storage.
+20. No category/topic/sound-mode abstraction is required for the MVP.
