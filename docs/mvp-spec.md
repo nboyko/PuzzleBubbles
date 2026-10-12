@@ -101,7 +101,7 @@ The data layer is responsible for resolving these IDs to their current physical 
 The Figma home design uses the child-facing names **What's That?** for Choose It
 and **Match Up** for Matching. These are display names only: mechanic types and
 stable catalog IDs (`choose-it`, `matching`) remain unchanged. The home uses the
-corresponding `game-types` artwork as card backgrounds with colored title bars.
+corresponding `game-covers` artwork as card backgrounds with colored title bars.
 
 The home/navigation step alone does not fulfill the playable MVP definition of
 done in section 16. Acceptance is evaluated against the selected iteration step;
