@@ -1,5 +1,11 @@
 # Puzzle Bubbles — MVP Specification
 
+This document defines intended MVP requirements, including unimplemented work.
+It is not a record of completed functionality. See [README.md](../README.md) for
+the current application and `docs/iterations/` for functional milestones and pending work.
+The next agreed implementation step and its acceptance criteria live in
+[plan.md](plan.md); they must remain consistent with these product requirements.
+
 ## 1. Product
 
 **Puzzle Bubbles** is a simple educational game for young children.
@@ -97,10 +103,9 @@ and **Match Up** for Matching. These are display names only: mechanic types and
 stable catalog IDs (`choose-it`, `matching`) remain unchanged. The home uses the
 corresponding `game-types` artwork as card backgrounds with colored title bars.
 
-Development milestone 001 implements the home catalog and navigation only.
-Choose It and Matching open distinct placeholder destinations with normal Back
-navigation. Game mechanics and sound remain deferred; this milestone does not
-fulfill the playable MVP definition of done in section 16.
+The home/navigation step alone does not fulfill the playable MVP definition of
+done in section 16. Acceptance is evaluated against the selected iteration step;
+the current implementation status is maintained separately from these requirements.
 
 The first screen is a list of available game mechanics.
 

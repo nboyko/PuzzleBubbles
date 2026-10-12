@@ -2,6 +2,11 @@
 
 This document defines how Puzzle Bubbles assets are created, stored, named, and referenced.
 
+Preferred formats are authoring conventions, not a claim that every existing
+asset uses them. Current runtime covers are WebP, gameplay images are 512px PNG,
+content prompts are MP3, and the success effect is a trimmed WAV. Features and
+application architecture are described in [README.md](../README.md).
+
 It covers:
 
 - images;

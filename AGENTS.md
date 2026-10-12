@@ -105,18 +105,42 @@ This includes implementation plans, iteration notes, change summaries, and repor
 An implementation request alone does not authorize creating documentation;
 summarize the work in the response instead.
 
+### Documentation and finalization
+
+- Iterations are functional milestones, not Git commits. `docs/iterations/`
+  holds brief descriptions of verified functionality and remaining milestone work.
+- `docs/plan.md` defines the agreed next step and acceptance criteria. Finalization
+  compares implementation against this plan; update it for the next feature only
+  after the current verified plan has been committed.
+- `README.md` describes implemented features and architecture;
+  `docs/content-assets.md` holds asset conventions. Permanent documentation must
+  reflect verified current behavior. `docs/mvp-spec.md` defines requirements,
+  including unimplemented scope; it is not an implementation status report.
+- At meaningful boundaries, explicitly invoke `$finalize-iteration` with the
+  iteration file and functional scope. Its workflow is in
+  [.agents/skills/finalize-iteration/SKILL.md](.agents/skills/finalize-iteration/SKILL.md).
+- Only an explicit `$finalize-iteration` invocation runs finalization and its
+  documentation synchronization/reconciliation. Coding tasks and regular commits
+  do not trigger either; separate documentation requests may be handled directly.
+  After verification succeeds, invocation authorizes a scoped local commit of the
+  implementation, current plan, iteration record, and affected documentation,
+  unless the user requests review only. It does not authorize pushing or history
+  rewriting. Do not add hooks or other implicit triggers. Report critical missing
+  requirements or verification
+  failures; never hide them by rewriting requirements or declaring completion.
+
 ### Iteration tracking
 
 - An iteration remains in progress until the user explicitly says it is finished.
   Completed implementation, passing tests, or a commit do not close an iteration.
-- Record each commit belonging to the active iteration as a separate, numbered
-  phase in its existing `docs/iterations/` file. Include the commit reference,
-  changes, verification results, and any remaining issues.
-- Keep uncommitted work clearly marked as pending; do not invent commit phases
-  or commit hashes. Add the actual commit reference once it is available.
+- On explicit finalization, reconcile the plan into a brief description of
+  verified working functionality. Preserve unfinished requirements separately in
+  the appropriate upcoming iteration; do not silently discard or expand them.
+- Iteration records do not require commit hashes, Git metadata, per-commit phases,
+  implementation diaries, or detailed change logs. Git status does not determine
+  functional completion.
 - Maintain the iteration file requested by the user; do not create additional
-  iteration files without an explicit request. These rules do not authorize
-  making commits without the user's instruction.
+  iteration files without an explicit request.
 
 Before implementing a feature:
 
