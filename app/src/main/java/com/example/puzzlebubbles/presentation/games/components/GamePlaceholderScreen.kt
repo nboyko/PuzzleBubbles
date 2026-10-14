@@ -1,4 +1,4 @@
-package com.example.puzzlebubbles.presentation.game
+package com.example.puzzlebubbles.presentation.games.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

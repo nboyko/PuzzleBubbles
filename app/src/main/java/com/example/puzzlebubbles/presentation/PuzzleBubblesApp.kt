@@ -16,14 +16,23 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.puzzlebubbles.data.AudioPlayer
 import com.example.puzzlebubbles.domain.GameDefinition
 import com.example.puzzlebubbles.domain.GameType
-import com.example.puzzlebubbles.presentation.game.ChooseItGameScreen
-import com.example.puzzlebubbles.presentation.game.MatchingGameScreen
+import com.example.puzzlebubbles.domain.GameRepository
+import com.example.puzzlebubbles.presentation.games.chooseit.ChooseItGameScreen
+import com.example.puzzlebubbles.presentation.games.chooseit.ChooseItViewModel
+import com.example.puzzlebubbles.presentation.games.matching.MatchingGameScreen
 import com.example.puzzlebubbles.presentation.home.HomeScreen
 
 @Composable
-fun PuzzleBubblesApp(games: List<GameDefinition>, modifier: Modifier = Modifier) {
+fun PuzzleBubblesApp(
+    games: List<GameDefinition>,
+    gameRepository: GameRepository,
+    audioPlayer: AudioPlayer,
+    modifier: Modifier = Modifier,
+) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val view = LocalView.current
@@ -54,9 +63,19 @@ fun PuzzleBubblesApp(games: List<GameDefinition>, modifier: Modifier = Modifier)
                 )
             }
             composable("choose-it") {
+                val gameDefinition = games.single { it.type == GameType.CHOOSE_IT }
+                val chooseItViewModel: ChooseItViewModel = viewModel(
+                    factory = ChooseItViewModel.Factory(gameRepository.getChooseItGame(gameDefinition.id)),
+                )
                 ChooseItGameScreen(
-                    game = games.single { it.type == GameType.CHOOSE_IT },
+                    title = gameDefinition.title,
+                    uiState = chooseItViewModel.uiState,
+                    audioPlayer = audioPlayer,
+                    onAnswer = chooseItViewModel::answer,
+                    onReplay = chooseItViewModel::replayAudio,
+                    onFeedbackFinished = chooseItViewModel::finishFeedback,
                     onBack = { navController.popBackStack() },
+                    onGameComplete = { navController.popBackStack("home", inclusive = false) },
                     modifier = screenModifier,
                 )
             }

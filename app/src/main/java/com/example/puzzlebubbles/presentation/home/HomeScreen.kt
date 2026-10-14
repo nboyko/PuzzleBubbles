@@ -8,9 +8,11 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
@@ -23,6 +25,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -31,18 +34,26 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.example.puzzlebubbles.R
 import com.example.puzzlebubbles.data.LocalGameRepository
@@ -53,8 +64,8 @@ import com.example.puzzlebubbles.ui.theme.HomeHeadingFontFamily
 import com.example.puzzlebubbles.ui.theme.GameTitleFontFamily
 import com.example.puzzlebubbles.ui.theme.PuzzleBubblesTheme
 
-private val HeadingBlue = Color(0xFF166CAF)
-private val InkBlue = Color(0xFF24415F)
+private val HeadingBlue = Color(0xFF166EC5)
+private val InkBlue = Color(0xFF18345B)
 
 @Composable
 fun HomeScreen(
@@ -73,15 +84,16 @@ fun HomeScreen(
             contentAlignment = Alignment.TopCenter,
         ) {
             val wide = maxWidth >= 700.dp
+            val pageWidth = minOf(maxWidth, if (wide) 760.dp else 380.dp)
             LazyVerticalGrid(
                 columns = GridCells.Fixed(if (wide) 2 else 1),
                 modifier = Modifier.widthIn(max = if (wide) 760.dp else 380.dp).fillMaxSize(),
-                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 20.dp),
-                verticalArrangement = Arrangement.spacedBy(18.dp),
-                horizontalArrangement = Arrangement.spacedBy(20.dp),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 item(span = { GridItemSpan(maxLineSpan) }) {
-                    HomeHeading()
+                    HomeHeading(viewportWidth = pageWidth.value)
                 }
                 items(games, key = { it.id }) { game ->
                     GameCard(game = game, onClick = { onGameSelected(game) })
@@ -92,52 +104,104 @@ fun HomeScreen(
 }
 
 @Composable
-private fun HomeHeading() {
+private fun HomeHeading(viewportWidth: Float) {
+    // CSS rem uses a 16px base; map CSS px to dp/sp and vw to the page width.
+    val titleSize = (viewportWidth * .10f).coerceIn(36f, 55.2f)
+    val questionSize = (viewportWidth * .06f).coerceIn(23.2f, 32f)
+    val bubbleSize = 36.dp
+    val shadowOffset = with(LocalDensity.current) { 3.dp.toPx() }
+    val headingStyle = TextStyle(
+        fontFamily = HomeHeadingFontFamily,
+        platformStyle = PlatformTextStyle(includeFontPadding = false),
+        lineHeightStyle = LineHeightStyle(
+            alignment = LineHeightStyle.Alignment.Center,
+            trim = LineHeightStyle.Trim.Both,
+        ),
+    )
     Column(
-        modifier = Modifier.fillMaxWidth().padding(bottom = 2.dp),
+        modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Canvas(Modifier.size(44.dp).padding(end = 8.dp)) {
-                drawBubble(Offset(size.width * .62f, size.height * .58f), size.minDimension * .35f)
-                drawBubble(Offset(size.width * .23f, size.height * .23f), size.minDimension * .18f)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Canvas(Modifier.size(bubbleSize)) {
+                drawHeaderBubble(Offset(size.width * .25f, size.height * .25f), size.minDimension * .22f,
+                    Color(0xFFDC65DA))
+                drawHeaderBubble(Offset(size.width * .6f, size.height * .62f), size.minDimension * .39f)
             }
-            Column {
+            Column(
+                Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy((-18).dp),
+            ) {
                 Text(
                     text = stringResource(R.string.home_welcome),
-                    fontFamily = HomeHeadingFontFamily,
-                    fontSize = 9.sp,
-                    letterSpacing = 2.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = InkBlue.copy(alpha = .7f),
+                    style = headingStyle,
+                    fontSize = 12.48.sp,
+                    lineHeight = 18.sp,
+                    letterSpacing = .14.em,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color(0xFF5B77A0),
+                    modifier = Modifier.padding(start = 3.dp),
                 )
                 Text(
                     text = stringResource(R.string.app_name),
-                    style = MaterialTheme.typography.headlineLarge,
-                    fontFamily = HomeHeadingFontFamily,
+                    style = headingStyle.copy(
+                        shadow = Shadow(Color.White, Offset(0f, shadowOffset), blurRadius = 0f),
+                    ),
+                    fontSize = titleSize.sp,
+                    lineHeight = titleSize.sp,
+                    letterSpacing = (-.045).em,
                     fontWeight = FontWeight.ExtraBold,
                     color = HeadingBlue,
                     modifier = Modifier.semantics { heading() },
                 )
             }
         }
+        Spacer(Modifier.height(24.dp))
         Text(
             text = stringResource(R.string.home_question),
-            fontFamily = HomeHeadingFontFamily,
-            style = MaterialTheme.typography.titleMedium,
+            style = headingStyle,
+            fontSize = questionSize.sp,
+            lineHeight = (questionSize * 1.15f).sp,
             fontWeight = FontWeight.Bold,
             color = InkBlue,
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 12.dp),
         )
         Text(
             text = stringResource(R.string.home_hint),
-            fontFamily = HomeHeadingFontFamily,
-            style = MaterialTheme.typography.bodySmall,
-            color = Color(0xFF64748B),
+            style = headingStyle,
+            fontSize = 15.2.sp,
+            lineHeight = 20.sp,
+            fontWeight = FontWeight.ExtraBold,
+            color = Color(0xFF6A7F9E),
             textAlign = TextAlign.Center,
         )
+    }
+}
+
+private fun DrawScope.drawHeaderBubble(
+    center: Offset,
+    radius: Float,
+    borderColor: Color = Color(0xFF28BEE9),
+) {
+    drawCircle(
+        Brush.radialGradient(listOf(borderColor.copy(alpha = .22f), Color.Transparent),
+            center = center, radius = radius * 1.35f),
+        radius = radius * 1.35f,
+        center = center,
+    )
+    drawBubble(center, radius)
+    drawCircle(borderColor, radius, center, style = Stroke(1.5.dp.toPx()))
+    repeat(28) { index ->
+        val angle = index * 2 * Math.PI / 28
+        val dotCenter = center + Offset(
+            kotlin.math.cos(angle).toFloat() * radius * .91f,
+            kotlin.math.sin(angle).toFloat() * radius * .91f,
+        )
+        drawCircle(Color.White, radius * .034f, dotCenter)
     }
 }
 

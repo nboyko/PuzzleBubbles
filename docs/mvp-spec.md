@@ -102,6 +102,7 @@ The Figma home design uses the child-facing names **What's That?** for Choose It
 and **Match Up** for Matching. These are display names only: mechanic types and
 stable catalog IDs (`choose-it`, `matching`) remain unchanged. The home uses the
 corresponding `game-covers` artwork as card backgrounds with colored title bars.
+A settings destination and settings behavior remain deferred.
 
 The home/navigation step alone does not fulfill the playable MVP definition of
 done in section 16. Acceptance is evaluated against the selected iteration step;
@@ -192,14 +193,18 @@ The relationship is explicit in the data.
 5. The application shows whether the answer is correct.
 6. If correct, the game proceeds to the next round.
 
-For the first iteration, use **three image choices per round**.
+For the first playable What's That? version, a session contains **10 rounds**.
+Each of the 10 local target items appears exactly once in randomized order.
+Every round contains exactly **two image choices**: the explicit correct image
+and one randomized incorrect image from another target item. Choice order is
+randomized independently from correctness.
 
 ### Interaction
 
 The screen should contain:
 
 - a large play/replay button;
-- three selectable image cards;
+- two large selectable image bubbles;
 - feedback after selection.
 
 If the child selects an incorrect image:
@@ -211,7 +216,12 @@ If the child selects an incorrect image:
 If the child selects the correct image:
 
 - give positive visual feedback;
-- briefly show completion state;
+- hide the other choice immediately and start the success sound, movement toward
+  the gameplay area's center, and growth together;
+- grow the selected bubble smoothly over roughly 1.2 seconds to at most 130%,
+  keeping it within the gameplay area's bounds;
+- wait for both growth and the complete success sound, then briefly fade/pop the
+  bubble before advancing;
 - move to the next round.
 
 The sound should play once when the round opens and should be replayable.
@@ -226,7 +236,6 @@ soundAssetId: cat-audio
 choices:
   - cat
   - dog
-  - pig
 
 correctChoiceId: cat
 ```
@@ -640,7 +649,7 @@ The first usable version is complete when:
 5. Matching opens directly into gameplay.
 6. Choose It supports multiple local rounds.
 7. Each Choose It round can play and replay one supplied audio asset.
-8. Each Choose It round displays three image choices.
+8. Each Choose It round displays two image choices.
 9. The child can select an image.
 10. Correct and incorrect selections produce clear feedback.
 11. Matching displays multiple supplied image pairs.

@@ -1,4 +1,6 @@
-package com.example.puzzlebubbles.presentation.game
+package com.example.puzzlebubbles.presentation.games.matching
+
+import com.example.puzzlebubbles.presentation.games.components.GamePlaceholderScreen
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -7,10 +9,10 @@ import com.example.puzzlebubbles.R
 import com.example.puzzlebubbles.domain.GameDefinition
 
 @Composable
-fun ChooseItGameScreen(game: GameDefinition, onBack: () -> Unit, modifier: Modifier = Modifier) {
+fun MatchingGameScreen(game: GameDefinition, onBack: () -> Unit, modifier: Modifier = Modifier) {
     GamePlaceholderScreen(
         game = game,
-        description = stringResource(R.string.choose_it_placeholder),
+        description = stringResource(R.string.matching_placeholder),
         onBack = onBack,
         modifier = modifier,
     )

@@ -12,17 +12,19 @@ assets/source/
 ├── images/
 │   ├── game-covers/
 │   │   ├── whats_that.png
-│   │   └── match_it_up.png
+│   │   ├── match_it_up.png
+│   │   └── bubbles-bg.png
 │   └── gameplay/
 │       ├── cat.png
 │       ├── dog.png
 │       └── ...
 ├── icons/
-│   ├── back.svg
-│   ├── speaker.svg
-│   ├── replay.svg
+│   ├── back_arrow.svg
+│   ├── sound.svg
 │   ├── settings.svg
-│   ├── home.svg
+│   ├── play.svg
+│   ├── games.svg
+│   ├── trophy.svg
 │   └── ...
 └── audio/
     ├── content/
@@ -47,22 +49,24 @@ nested icon folders without a concrete need.
 | `audio/content/` | Audio belonging to game content/question data |
 | `audio/sfx/` | UI/gameplay feedback sounds, separate from content data |
 
-Current source inventory: two PNG covers, 15 PNG gameplay images, ten MP3 prompts
-in `audio/content/`, and `audio/sfx/pop.wav`. The icons folder is currently empty:
-existing control shapes are drawn in Compose. No separate game-complete sound is
-currently supplied. Preserve unreferenced gameplay source images; source inventory
-does not imply that every image is already packaged or used by a game.
+Current source inventory: two PNG covers, the supplied completion background
+`images/game-covers/bubbles-bg.png`, 15 PNG gameplay images, six SVG icon shapes,
+ten MP3 prompts in `audio/content/`, and `audio/sfx/pop.wav`.
+No separate game-complete sound is currently supplied. Preserve unreferenced
+gameplay source images; source inventory does not imply that every image is
+already packaged or used by a game.
 
 ## Android runtime structure
 
 ```text
 app/src/main/res/
 ├── drawable/
-│   ├── ic_back.xml
-│   ├── ic_speaker.xml
-│   ├── ic_replay.xml
+│   ├── ic_back_arrow.xml
+│   ├── ic_sound.xml
 │   ├── ic_settings.xml
-│   ├── ic_home.xml
+│   ├── ic_play.xml
+│   ├── ic_games.xml
+│   ├── ic_trophy.xml
 │   └── ...
 ├── drawable-nodpi/
 │   ├── game_cover_whats_that.webp
@@ -83,9 +87,9 @@ unnecessary re-encoding or duplicate exports. Never change an extension without
 converting the actual format.
 
 The current runtime contains two WebP covers, ten 512px gameplay PNGs,
-ten `content_*.mp3` prompts, and `sfx_pop.wav`. These format exceptions are
-intentional. Existing launcher assets remain in Android's drawable/mipmap folders;
-the control Vector Drawable examples above have not yet been created.
+the unchanged 887 × 1774 completion background `bubbles_bg.png`, six icon vectors,
+ten `content_*.mp3` prompts, and `sfx_pop.wav`. These format/size exceptions are
+intentional. Existing launcher assets remain in Android's drawable/mipmap folders.
 
 | Stable asset ID | Current source | Current runtime |
 | --- | --- | --- |
@@ -94,6 +98,13 @@ the control Vector Drawable examples above have not yet been created.
 | `cat-image` | `images/gameplay/cat.png` | `drawable-nodpi/cat.png` |
 | `cat-audio` | `audio/content/cat.mp3` | `raw/content_cat.mp3` |
 | `sfx-pop` | `audio/sfx/pop.wav` | `raw/sfx_pop.wav` |
+| `completion-background` | `images/game-covers/bubbles-bg.png` | `drawable-nodpi/bubbles_bg.png` |
+| `ui-back` | `icons/back_arrow.svg` | `drawable/ic_back_arrow.xml` |
+| `ui-sound` | `icons/sound.svg` | `drawable/ic_sound.xml` |
+| `ui-settings` | `icons/settings.svg` | `drawable/ic_settings.xml` |
+| `ui-play` | `icons/play.svg` | `drawable/ic_play.xml` |
+| `ui-games` | `icons/games.svg` | `drawable/ic_games.xml` |
+| `ui-trophy` | `icons/trophy.svg` | `drawable/ic_trophy.xml` |
 
 Source paths in this table are relative to `assets/source/`; runtime paths are
 relative to `app/src/main/res/`. Other packaged gameplay items follow the same
@@ -129,8 +140,11 @@ against the source at the actual control size. Unsupported SVG filters, masks,
 or other effects require a practical Android-compatible raster fallback; preserve
 the original SVG and do not force a lossy vector approximation.
 
-Do not invent unused controls merely to populate the example tree. Existing
-Compose-drawn controls remain unchanged by asset-folder cleanup.
+Current UI SVGs contain colorable `currentColor` strokes. Android exports use
+white strokes as a tint/gradient mask; preserve path transforms as well as geometry.
+Compose supplies button colors and optional neon treatment. The completion trophy
+uses a yellow-gold gradient. Blur-based halos render on Android 12+; older devices
+retain the sharp colored shapes. Decorative bubble artwork is still drawn in Compose.
 
 ## Audio
 

@@ -11,10 +11,13 @@ This overview describes the current checkout, not iteration acceptance.
   ten rounds, each target once, and two shuffled choices with explicit correctness.
   Audio plays on entry and can be replayed. Wrong answers stay on the round;
   correct answers hide the other choice, center/grow the bubble, and play success
-  audio before advancing. Completion shows a pulsing trophy for three seconds,
-  then returns Home.
+  audio together before advancing. Growth is capped at +30% and stays inside the
+  gameplay area. Completion shows a pulsing gold trophy inside the supplied
+  bubble background for three seconds, then returns Home.
 - Match Up is a separate placeholder destination. Back returns Home.
-- The Home settings gear is tappable but performs no action.
+- Game controls use `BubbleButton`: circular for icon-only controls and pill-shaped
+  for text, with configurable colors, border, and optional restrained neon glow.
+  Back is borderless; Replay is bordered. Both match the game title's blue.
 
 ## Architecture
 
@@ -29,6 +32,11 @@ One Android `app` module, with sources under
   resolvers, and single-instance `MediaPlayer` playback. Resource lookup stays at
   the rendering/playback boundary. `MainActivity` wires dependencies; the Choose It
   ViewModel is scoped to its navigation destination.
+
+Screen-scoped effects cancel feedback and completion timers on disposal and stop
+audio when leaving the game. Leaving and reopening starts a fresh session;
+session progress is not stored persistently. Blur-based icon glow is supported
+on Android 12+; older supported devices retain the unblurred icon and rim.
 
 Content is bundled locally. There is no Room database or network integration.
 Source assets live under `assets/source/`; runtime assets are Android resources.

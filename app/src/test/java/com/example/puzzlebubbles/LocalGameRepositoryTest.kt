@@ -15,4 +15,14 @@ class LocalGameRepositoryTest {
         assertEquals(listOf("choose-it-cover", "matching-cover"), games.map { it.coverImageAssetId })
         assertEquals(games.size, games.map { it.id }.distinct().size)
     }
+
+    @Test
+    fun chooseItPresetContainsTenCompleteUniqueItems() {
+        val game = LocalGameRepository().getChooseItGame("choose-it")
+
+        assertEquals(10, game.items.size)
+        assertEquals(10, game.items.map { it.id }.distinct().size)
+        assertEquals(10, game.items.map { it.imageAssetId }.distinct().size)
+        assertEquals(10, game.items.map { it.audioAssetId }.distinct().size)
+    }
 }

@@ -4,6 +4,7 @@ import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.espresso.Espresso.pressBack
@@ -23,12 +24,16 @@ class HomeNavigationTest {
     }
 
     @Test
-    fun eachCardOpensItsPlaceholderAndVisibleBackReturnsHome() {
-        for (title in listOf("What's That?", "Match Up")) {
-            openGame(title)
-            compose.onNodeWithText("Back").performClick()
-            assertHome()
-        }
+    fun eachCardOpensItsDestinationAndVisibleBackReturnsHome() {
+        openGame("What's That?")
+        compose.onNodeWithContentDescription("Replay sound").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Back").performClick()
+        assertHome()
+
+        openGame("Match Up")
+        compose.onNodeWithText("Game coming soon").assertIsDisplayed()
+        compose.onNodeWithText("Back").performClick()
+        assertHome()
     }
 
     @Test
@@ -46,7 +51,12 @@ class HomeNavigationTest {
             openGame(title)
             compose.activityRule.scenario.recreate()
             compose.onNodeWithText(title).assertIsDisplayed()
-            compose.onNodeWithText("Game coming soon").assertIsDisplayed()
+            if (title == "What's That?") {
+                compose.onNodeWithContentDescription("Replay sound").assertIsDisplayed()
+                compose.onNodeWithText("Game coming soon").assertDoesNotExist()
+            } else {
+                compose.onNodeWithText("Game coming soon").assertIsDisplayed()
+            }
             pressBack()
             assertHome()
         }
@@ -55,13 +65,13 @@ class HomeNavigationTest {
     private fun openGame(title: String) {
         compose.onNodeWithText(title).performScrollTo().performClick()
         compose.onNodeWithText(title).assertIsDisplayed()
-        compose.onNodeWithText("Game coming soon").assertIsDisplayed()
-        val description = if (title == "What's That?") {
-            "Listen and choose a picture."
+        if (title == "What's That?") {
+            compose.onNodeWithContentDescription("Replay sound").assertIsDisplayed()
+            compose.onNodeWithText("Game coming soon").assertDoesNotExist()
         } else {
-            "Find the pictures that go together."
+            compose.onNodeWithText("Game coming soon").assertIsDisplayed()
+            compose.onNodeWithText("Find the pictures that go together.").assertIsDisplayed()
         }
-        compose.onNodeWithText(description).assertIsDisplayed()
         compose.onNodeWithText("Puzzle Bubbles").assertDoesNotExist()
     }
 

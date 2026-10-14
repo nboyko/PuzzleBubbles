@@ -1,57 +1,38 @@
-# Iteration 1: Home screen and game navigation
+# Iteration 1: Home and playable What's That?
 
-Status: **In progress**. Only the user's explicit confirmation closes this iteration.
-This record has been reformatted; the current iteration has not been finalized.
+Status: **In progress**. The What's That? implementation step is verified;
+the user has not explicitly closed the iteration.
 
-## Initial planned scope
+## Verified functionality
 
-Create a child-friendly Home screen with two large image cards and direct
-navigation to distinct game placeholders, with normal Back behavior.
+Home provides two image cards with direct game routing and Back navigation.
+What's That? opens a randomized ten-round local session with two image bubbles
+per round, explicit correctness, and automatic/replayable content audio.
+Wrong answers wobble without advancing. Correct answers hide the other choice,
+center/grow within bounds, and wait for success audio before the next round.
 
-The mechanic names are **Choose It** and **Matching**; their child-facing titles
-are **What's That?** and **Match Up**. The initial Home milestone excludes game
-mechanics, audio playback, matching interactions, scoring, progress, settings
-behavior, Room, and networking.
+Back and Replay use configurable `BubbleButton` controls. Completion displays
+a pulsing yellow-gold trophy in the supplied bubble background for three seconds,
+then returns Home. Static content, session state, rendering, and playback stay
+separate; no persistence or network services are involved.
 
-## Recorded Home functionality
+## Verification
 
-Home uses a local game catalog, stable cover asset IDs, full square artwork above
-title bars, Baloo 2 headings, and Lilita One card titles. Its scrollable layout has
-one column on narrow screens and two at widths of at least 700 dp. Navigation
-uses separate `home`, `choose-it`, and `matching` destinations with Back to Home.
+Debug build, six unit tests, seven device tests, and lint passed with zero errors
+and 18 non-critical warnings. Resource mappings and UI vectors were checked.
+Medium-phone emulator verification covered rapid replay/answers, Back, all ten
+rounds, completion artwork, and automatic Home return. Screen-disposal cleanup
+was reviewed in the code.
 
-These are recorded implementation details, not a new finalization or acceptance
-decision. Current behavior and architecture belong in [README.md](../../README.md);
-asset storage belongs in [content-assets.md](../content-assets.md).
+See the retained [current plan](../plan.md) for acceptance criteria,
+[README.md](../../README.md) for current behavior/architecture, and
+[asset conventions](../content-assets.md) for storage and icon rendering.
 
-## Pending functionality: playable What's That?
+## Remaining and upcoming work
 
-The working checkout contains a playable implementation awaiting finalization
-against an agreed [current plan](../plan.md) consistent with the
-[MVP requirements](../mvp-spec.md). The plan's scope has not yet been selected;
-the existing pending scope includes:
-
-- Ten local target items, each appearing once in randomized rounds with two
-  image choices and explicit correctness.
-- Automatic and replayable content audio.
-- Gentle wrong-answer feedback without advancing; correct-answer animation and
-  success audio followed by the next round.
-- A pulsing trophy after the final round and automatic return Home.
-- Runtime image/audio resolution, session/engine tests, and navigation checks.
-
-Match Up remains a placeholder. This pending functionality has not been declared
-complete merely because code or individual checks exist.
-
-## Remaining verification and acceptance
-
-Explicit finalization must verify the current checkout against the agreed current
-plan and reconcile these requirements. Earlier task results do not establish finalization.
-Review small-screen discoverability, enlarged text, dark mode/system bars, audio,
-rapid tapping, Back, all-round completion, and the timed return Home.
-User acceptance and explicit iteration completion remain pending.
-
-## Upcoming work
-
-Keep any unfinished requirements identified during explicit finalization separate
-from completed functionality and place them in the appropriate upcoming iteration.
-No next iteration is currently defined; do not invent one or expand its scope here.
+User acceptance and explicit iteration closure remain pending. Match Up is still
+a placeholder and is outside the verified What's That? step. A next feature or
+iteration has not been selected; update the plan only after that choice.
+Broader device/API and enlarged-text visual checks remain non-critical follow-up
+coverage. Blur-based glow is limited to Android 12+; sharp icons and rims remain
+available on older supported versions.
