@@ -17,6 +17,7 @@ object LocalAudioAssetResolver {
         "rabbit-audio" -> R.raw.content_rabbit
         "sheep-audio" -> R.raw.content_sheep
         "sfx-pop" -> R.raw.sfx_pop
+        "sfx-game-complete" -> R.raw.sfx_game_complete
         else -> error("Unknown audio asset ID: $assetId")
     }
 }

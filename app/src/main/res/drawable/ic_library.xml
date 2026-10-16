@@ -1,0 +1,8 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="48dp" android:height="48dp" android:viewportWidth="128" android:viewportHeight="128">
+  <path android:pathData="M39 42 V20 Q39 14 45 14 H83 Q89 14 89 20 V26" android:fillColor="#00000000" android:strokeColor="#FFFFFFFF" android:strokeWidth="3.5" android:strokeLineCap="round" android:strokeLineJoin="round"/>
+  <path android:pathData="M89 88 V96 Q89 102 83 102 H54" android:fillColor="#00000000" android:strokeColor="#FFFFFFFF" android:strokeWidth="3.5" android:strokeLineCap="round" android:strokeLineJoin="round"/>
+  <path android:pathData="M58 22 H70" android:fillColor="#00000000" android:strokeColor="#FFFFFFFF" android:strokeWidth="3.5" android:strokeLineCap="round" android:strokeLineJoin="round"/>
+  <path android:pathData="M18 120 L26 101 C21 91 20 83 23 73 L30 49 Q32 42 38 45 Q44 48 42 55 L38 76 C48 82 54 92 53 108" android:fillColor="#00000000" android:strokeColor="#FFFFFFFF" android:strokeWidth="3.5" android:strokeLineCap="round" android:strokeLineJoin="round"/>
+  <path android:pathData="M51 124 L58 113 L75 104" android:fillColor="#00000000" android:strokeColor="#FFFFFFFF" android:strokeWidth="3.5" android:strokeLineCap="round" android:strokeLineJoin="round"/>
+  <path android:pathData="M62 43 H76 V37 C76 28 89 28 89 37 V43 H102 V56 C102 56 93 52 93 61 C93 70 102 66 102 66 V81 H62 V66 C62 66 71 70 71 61 C71 52 62 56 62 56 V43 Z" android:fillColor="#00000000" android:strokeColor="#FFFFFFFF" android:strokeWidth="3.5" android:strokeLineCap="round" android:strokeLineJoin="round"/>
+</vector>

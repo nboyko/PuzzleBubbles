@@ -469,3 +469,13 @@ the gold trophy completion state, and automatic return Home.
 This verification used the medium-phone emulator. Broader device/API and enlarged
 text visual coverage remain optional follow-up checks; no required functionality
 from this step was deferred. Match Up gameplay remains outside this plan.
+
+## Shared navigation constraints
+
+Home and Library use a fixed, full-width bottom navigation bar without top tabs
+or a floating container. Reuse the existing games and library icons with small,
+matching-color labels. The active icon sits in a raised soap bubble within a
+close-fitting, smoothly rounded cutout. Touch feedback affects only the icon
+and label, with no background ripple. Keep the bar visible while scrolling,
+preserve Home scroll restoration, and do not show it inside games or Library
+child destinations. Keep the two current destinations; do not add future items.

@@ -95,7 +95,7 @@ fun ChooseItGameScreen(
     ) {
         GameBubbleBackdrop(Modifier.fillMaxSize())
         if (uiState.phase == ChooseItPhase.GAME_COMPLETE) {
-            GameCompleteScreen(onFinished = onGameComplete)
+            GameCompleteScreen(audioPlayer = audioPlayer, onFinished = onGameComplete)
         } else {
             val roundDescription = stringResource(
                 R.string.round_progress,
@@ -350,9 +350,12 @@ private fun ReplayBubble(enabled: Boolean, onClick: () -> Unit, modifier: Modifi
 }
 
 @Composable
-private fun GameCompleteScreen(onFinished: () -> Unit) {
-    LaunchedEffect(Unit) {
-        delay(3_000)
+private fun GameCompleteScreen(audioPlayer: AudioPlayer, onFinished: () -> Unit) {
+    LaunchedEffect(audioPlayer) {
+        coroutineScope {
+            launch { audioPlayer.playToEnd("sfx-game-complete") }
+            delay(3_000)
+        }
         onFinished()
     }
     val transition = rememberInfiniteTransition(label = "completion pulse")

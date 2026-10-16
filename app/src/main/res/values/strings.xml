@@ -7,7 +7,9 @@
     <string name="game_complete">Game complete</string>
     <string name="round_progress">Round %1$d of %2$d</string>
     <string name="home_welcome">WELCOME TO</string>
-    <string name="settings">Settings</string>
+    <string name="library">Library</string>
+    <string name="home">Home</string>
+    <string name="library_placeholder">Library is coming soon.</string>
     <string name="home_question">What would you like to play?</string>
     <string name="home_hint">Pick a game to begin!</string>
 </resources>

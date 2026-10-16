@@ -6,9 +6,10 @@ import com.example.puzzlebubbles.R
 object LocalImageAssetResolver {
     @DrawableRes
     fun resolveImage(assetId: String): Int = when (assetId) {
+        "app-logo" -> R.drawable.ic_bubbles_logo
         "ui-back" -> R.drawable.ic_back_arrow
         "ui-sound" -> R.drawable.ic_sound
-        "ui-settings" -> R.drawable.ic_settings
+        "ui-library" -> R.drawable.ic_library
         "ui-play" -> R.drawable.ic_play
         "ui-games" -> R.drawable.ic_games
         "ui-trophy" -> R.drawable.ic_trophy

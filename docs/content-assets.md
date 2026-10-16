@@ -21,7 +21,7 @@ assets/source/
 ├── icons/
 │   ├── back_arrow.svg
 │   ├── sound.svg
-│   ├── settings.svg
+│   ├── library.svg
 │   ├── play.svg
 │   ├── games.svg
 │   ├── trophy.svg
@@ -63,7 +63,7 @@ app/src/main/res/
 ├── drawable/
 │   ├── ic_back_arrow.xml
 │   ├── ic_sound.xml
-│   ├── ic_settings.xml
+│   ├── ic_library.xml
 │   ├── ic_play.xml
 │   ├── ic_games.xml
 │   ├── ic_trophy.xml
@@ -101,7 +101,7 @@ intentional. Existing launcher assets remain in Android's drawable/mipmap folder
 | `completion-background` | `images/game-covers/bubbles-bg.png` | `drawable-nodpi/bubbles_bg.png` |
 | `ui-back` | `icons/back_arrow.svg` | `drawable/ic_back_arrow.xml` |
 | `ui-sound` | `icons/sound.svg` | `drawable/ic_sound.xml` |
-| `ui-settings` | `icons/settings.svg` | `drawable/ic_settings.xml` |
+| `ui-library` | `icons/library.svg` | `drawable/ic_library.xml` |
 | `ui-play` | `icons/play.svg` | `drawable/ic_play.xml` |
 | `ui-games` | `icons/games.svg` | `drawable/ic_games.xml` |
 | `ui-trophy` | `icons/trophy.svg` | `drawable/ic_trophy.xml` |
@@ -130,8 +130,8 @@ Keep editable sources directly under `assets/source/icons/`. Export/import
 supported paths into Android Vector Drawables in `res/drawable/`, for example:
 
 ```text
-assets/source/icons/settings.svg
-    → app/src/main/res/drawable/ic_settings.xml
+assets/source/icons/library.svg
+    → app/src/main/res/drawable/ic_library.xml
 ```
 
 Use lowercase snake_case filenames and the `ic_` runtime prefix. Preserve the

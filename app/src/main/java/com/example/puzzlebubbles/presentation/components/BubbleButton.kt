@@ -8,6 +8,7 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -61,6 +62,8 @@ fun BubbleButton(
     neon: Boolean = false,
     enabled: Boolean = true,
     diameter: Dp = 56.dp,
+    contentPadding: PaddingValues = PaddingValues(horizontal = 24.dp, vertical = 14.dp),
+    containerColors: List<Color> = emptyList(),
 ) {
     require(colors.isNotEmpty()) { "A button needs at least one color" }
     require(iconAssetId != null || !text.isNullOrBlank()) { "A button needs an icon or text" }
@@ -86,21 +89,25 @@ fun BubbleButton(
                 role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        if (showBorder) Canvas(Modifier.matchParentSize()) {
+        if (showBorder || containerColors.isNotEmpty()) Canvas(Modifier.matchParentSize()) {
             val inset = 6.dp.toPx()
             val origin = Offset(inset, inset)
             val frameSize = Size(size.width - inset * 2, size.height - inset * 2)
             val corner = CornerRadius(frameSize.height / 2)
-            if (neon) {
+            if (containerColors.isNotEmpty()) {
+                val fillColors = if (containerColors.size == 1) List(2) { containerColors.first() } else containerColors
+                drawRoundRect(Brush.horizontalGradient(fillColors), origin, frameSize, corner)
+            }
+            if (showBorder && neon) {
                 drawRoundRect(brush, origin, frameSize, corner, alpha = .07f, style = Stroke(6.dp.toPx()))
                 drawRoundRect(brush, origin, frameSize, corner, alpha = .12f, style = Stroke(3.dp.toPx()))
             }
-            drawRoundRect(brush, origin, frameSize, corner, style = Stroke(1.2.dp.toPx()))
-            if (neon) drawRoundRect(Color.White.copy(alpha = .18f), origin, frameSize, corner,
+            if (showBorder) drawRoundRect(brush, origin, frameSize, corner, style = Stroke(1.2.dp.toPx()))
+            if (showBorder && neon) drawRoundRect(Color.White.copy(alpha = .18f), origin, frameSize, corner,
                 style = Stroke(.4.dp.toPx()))
         }
         Row(
-            modifier = if (iconOnly) Modifier else Modifier.padding(horizontal = 24.dp, vertical = 14.dp),
+            modifier = if (iconOnly) Modifier else Modifier.padding(contentPadding),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {

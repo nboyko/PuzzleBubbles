@@ -1,6 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="512" height="512">
   <g fill="none" stroke="currentColor" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M0 0 H14 C14 0 14 -8 20 -8 C26 -8 26 0 26 0 H40 V14 C40 14 48 14 48 20 C48 26 40 26 40 26 V40 H26 C26 40 26 48 20 48 C14 48 14 40 14 40 H0 V26 C0 26 -8 26 -8 20 C-8 14 0 14 0 14 Z" transform="translate(20 46) rotate(-14 20 20)" />
-    <path d="M0 0 H14 C14 0 14 -8 20 -8 C26 -8 26 0 26 0 H40 V14 C40 14 48 14 48 20 C48 26 40 26 40 26 V40 H26 C26 40 26 48 20 48 C14 48 14 40 14 40 H0 V26 C0 26 -8 26 -8 20 C-8 14 0 14 0 14 Z" transform="translate(74 40) rotate(12 20 20)" />
+    <path d="M16 50 H48 V62 C48 62 38 58 38 68 C38 78 48 74 48 74 V86 H60 C60 86 56 76 66 76 C76 76 72 86 72 86 H84 V118 Q84 122 80 122 H16 Q12 122 12 118 V54 Q12 50 16 50 Z" />
+    <path d="M12 86 H24 C24 86 20 96 30 96 C40 96 36 86 36 86 H48 V98 C48 98 58 94 58 104 C58 114 48 110 48 110 V122" />
+    <path d="M73 8 H105 Q109 8 109 12 V43 Q109 47 105 47 H95 C95 47 99 37 89 37 C79 37 83 47 83 47 H69 V34 C69 34 59 38 59 28 C59 18 69 22 69 22 V12 Q69 8 73 8 Z" transform="rotate(25 84 28)" />
   </g>
 </svg>

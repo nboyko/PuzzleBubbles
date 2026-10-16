@@ -102,7 +102,12 @@ The Figma home design uses the child-facing names **What's That?** for Choose It
 and **Match Up** for Matching. These are display names only: mechanic types and
 stable catalog IDs (`choose-it`, `matching`) remain unchanged. The home uses the
 corresponding `game-covers` artwork as card backgrounds with colored title bars.
-A settings destination and settings behavior remain deferred.
+Home and Library use a fixed, full-width bottom navigation bar without top tabs
+or a floating container. Icons have small, matching-color labels underneath.
+The active icon sits in a raised soap bubble with a close, smoothly rounded
+cutout. Touch feedback highlights only the icon and label, with no background
+ripple. The bar stays visible while scrolling. Library opens a placeholder destination;
+actual library controls and behavior remain deferred.
 
 The home/navigation step alone does not fulfill the playable MVP definition of
 done in section 16. Acceptance is evaluated against the selected iteration step;

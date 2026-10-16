@@ -25,6 +25,7 @@ import com.example.puzzlebubbles.presentation.games.chooseit.ChooseItGameScreen
 import com.example.puzzlebubbles.presentation.games.chooseit.ChooseItViewModel
 import com.example.puzzlebubbles.presentation.games.matching.MatchingGameScreen
 import com.example.puzzlebubbles.presentation.home.HomeScreen
+import com.example.puzzlebubbles.presentation.library.LibraryScreen
 
 @Composable
 fun PuzzleBubblesApp(
@@ -36,7 +37,8 @@ fun PuzzleBubblesApp(
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val view = LocalView.current
-    val lightSystemBars = (backStackEntry?.destination?.route ?: "home") == "home" || !isSystemInDarkTheme()
+    val route = backStackEntry?.destination?.route ?: "home"
+    val lightSystemBars = route in listOf("home", "library") || !isSystemInDarkTheme()
     SideEffect {
         (view.context as? Activity)?.window?.let { window ->
             WindowCompat.getInsetsController(window, view).apply {
@@ -59,6 +61,13 @@ fun PuzzleBubblesApp(
                         }
                         navController.navigate(route) { launchSingleTop = true }
                     },
+                    modifier = Modifier.fillMaxSize(),
+                    onLibrarySelected = { navController.navigate("library") { launchSingleTop = true } },
+                )
+            }
+            composable("library") {
+                LibraryScreen(
+                    onBack = { navController.popBackStack() },
                     modifier = Modifier.fillMaxSize(),
                 )
             }
