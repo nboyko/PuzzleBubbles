@@ -50,9 +50,9 @@ nested icon folders without a concrete need.
 | `audio/sfx/` | UI/gameplay feedback sounds, separate from content data |
 
 Current source inventory: two PNG covers, the supplied completion background
-`images/game-covers/bubbles-bg.png`, 15 PNG gameplay images, six SVG icon shapes,
-ten MP3 prompts in `audio/content/`, and `audio/sfx/pop.wav`.
-No separate game-complete sound is currently supplied. Preserve unreferenced
+`images/game-covers/bubbles-bg.png`, 15 PNG gameplay images, eight SVGs (including
+the logo and Photos icon), ten MP3 prompts in `audio/content/`, and the effects
+`audio/sfx/pop.wav` and `audio/sfx/yay.mp3`. Preserve unreferenced
 gameplay source images; source inventory does not imply that every image is
 already packaged or used by a game.
 
@@ -87,9 +87,10 @@ unnecessary re-encoding or duplicate exports. Never change an extension without
 converting the actual format.
 
 The current runtime contains two WebP covers, ten 512px gameplay PNGs,
-the unchanged 887 × 1774 completion background `bubbles_bg.png`, six icon vectors,
-ten `content_*.mp3` prompts, and `sfx_pop.wav`. These format/size exceptions are
-intentional. Existing launcher assets remain in Android's drawable/mipmap folders.
+the unchanged 887 × 1774 completion background `bubbles_bg.png`, eight UI/logo vectors,
+ten `content_*.mp3` prompts, `sfx_pop.wav`, and `sfx_game_complete.mp3`. These
+format/size exceptions are intentional. Existing launcher assets remain in
+Android's drawable/mipmap folders.
 
 | Stable asset ID | Current source | Current runtime |
 | --- | --- | --- |
@@ -98,10 +99,13 @@ intentional. Existing launcher assets remain in Android's drawable/mipmap folder
 | `cat-image` | `images/gameplay/cat.png` | `drawable-nodpi/cat.png` |
 | `cat-audio` | `audio/content/cat.mp3` | `raw/content_cat.mp3` |
 | `sfx-pop` | `audio/sfx/pop.wav` | `raw/sfx_pop.wav` |
+| `sfx-game-complete` | `audio/sfx/yay.mp3` | `raw/sfx_game_complete.mp3` |
 | `completion-background` | `images/game-covers/bubbles-bg.png` | `drawable-nodpi/bubbles_bg.png` |
 | `ui-back` | `icons/back_arrow.svg` | `drawable/ic_back_arrow.xml` |
 | `ui-sound` | `icons/sound.svg` | `drawable/ic_sound.xml` |
 | `ui-library` | `icons/library.svg` | `drawable/ic_library.xml` |
+| `ui-image` | `icons/image.svg` | `drawable/ic_image.xml` |
+| `app-logo` | `icons/bubbles_logo.svg` | `drawable/ic_bubbles_logo.xml` |
 | `ui-play` | `icons/play.svg` | `drawable/ic_play.xml` |
 | `ui-games` | `icons/games.svg` | `drawable/ic_games.xml` |
 | `ui-trophy` | `icons/trophy.svg` | `drawable/ic_trophy.xml` |
@@ -140,8 +144,10 @@ against the source at the actual control size. Unsupported SVG filters, masks,
 or other effects require a practical Android-compatible raster fallback; preserve
 the original SVG and do not force a lossy vector approximation.
 
-Current UI SVGs contain colorable `currentColor` strokes. Android exports use
-white strokes as a tint/gradient mask; preserve path transforms as well as geometry.
+Control SVGs use colorable `currentColor` strokes and fills. Their Android exports
+use white shapes as a tint/gradient mask; the logo retains its source colors.
+The Photos icon exports directly to `ic_image.xml` without unsupported effects.
+Preserve path transforms as well as geometry.
 Compose supplies button colors and optional neon treatment. The completion trophy
 uses a yellow-gold gradient. Blur-based halos render on Android 12+; older devices
 retain the sharp colored shapes. Decorative bubble artwork is still drawn in Compose.

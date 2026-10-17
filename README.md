@@ -7,13 +7,21 @@ This overview describes the current checkout, not iteration acceptance.
 
 - Home shows image cards for **What's That?** (Choose It) and **Match Up**
   (Matching), with Baloo 2 headings and Lilita One card titles.
+- Home and My Library share a fixed bottom navigation bar with labeled icons
+  and a raised bubble around the active icon. There are no top tabs.
+- My Library has Photos and Sounds cards opening dedicated empty screens.
+  Each child has its title, icon, empty message, Back to My Library, and the
+  fixed Home/Library navigation bar with Library selected. No sample media,
+  importing, playback, or storage is included in Library. Home scroll position
+  and navigation survive recreation.
 - What's That? uses ten bundled image/audio pairs. Each randomized session has
   ten rounds, each target once, and two shuffled choices with explicit correctness.
   Audio plays on entry and can be replayed. Wrong answers stay on the round;
   correct answers hide the other choice, center/grow the bubble, and play success
   audio together before advancing. Growth is capped at +30% and stays inside the
   gameplay area. Completion shows a pulsing gold trophy inside the supplied
-  bubble background for three seconds, then returns Home.
+  bubble background for at least three seconds, waiting for the complete yay
+  sound before returning Home.
 - Match Up is a separate placeholder destination. Back returns Home.
 - Game controls use `BubbleButton`: circular for icon-only controls and pill-shaped
   for text, with configurable colors, border, and optional restrained neon glow.
@@ -25,7 +33,9 @@ One Android `app` module, with sources under
 `app/src/main/java/com/example/puzzlebubbles/`:
 
 - `presentation/`: Compose screens, ViewModels, and Navigation Compose routes
-  (`home`, `choose-it`, `matching`); game screens are grouped by mechanic.
+  (`home`, `library`, `library/photos`, `library/sounds`, `choose-it`, `matching`);
+  game screens are grouped by mechanic. Library's empty states are presentation
+  only; no user-media data layer is introduced.
 - `domain/`: catalog/content models and pure session generation/state transitions.
   Static content stays separate from session progress; asset references are stable IDs.
 - `data/`: `GameRepository` implementation with a Kotlin preset, resource

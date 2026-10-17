@@ -26,6 +26,8 @@ import com.example.puzzlebubbles.presentation.games.chooseit.ChooseItViewModel
 import com.example.puzzlebubbles.presentation.games.matching.MatchingGameScreen
 import com.example.puzzlebubbles.presentation.home.HomeScreen
 import com.example.puzzlebubbles.presentation.library.LibraryScreen
+import com.example.puzzlebubbles.presentation.library.PhotosScreen
+import com.example.puzzlebubbles.presentation.library.SoundsScreen
 
 @Composable
 fun PuzzleBubblesApp(
@@ -38,7 +40,7 @@ fun PuzzleBubblesApp(
     val backStackEntry by navController.currentBackStackEntryAsState()
     val view = LocalView.current
     val route = backStackEntry?.destination?.route ?: "home"
-    val lightSystemBars = route in listOf("home", "library") || !isSystemInDarkTheme()
+    val lightSystemBars = route in listOf("home", "library", "library/photos", "library/sounds") || !isSystemInDarkTheme()
     SideEffect {
         (view.context as? Activity)?.window?.let { window ->
             WindowCompat.getInsetsController(window, view).apply {
@@ -68,6 +70,22 @@ fun PuzzleBubblesApp(
             composable("library") {
                 LibraryScreen(
                     onBack = { navController.popBackStack() },
+                    onPhotosSelected = { navController.navigate("library/photos") { launchSingleTop = true } },
+                    onSoundsSelected = { navController.navigate("library/sounds") { launchSingleTop = true } },
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+            composable("library/photos") {
+                PhotosScreen(
+                    onBack = { navController.popBackStack() },
+                    onHome = { navController.popBackStack("home", inclusive = false) },
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+            composable("library/sounds") {
+                SoundsScreen(
+                    onBack = { navController.popBackStack() },
+                    onHome = { navController.popBackStack("home", inclusive = false) },
                     modifier = Modifier.fillMaxSize(),
                 )
             }

@@ -10,6 +10,7 @@ object LocalImageAssetResolver {
         "ui-back" -> R.drawable.ic_back_arrow
         "ui-sound" -> R.drawable.ic_sound
         "ui-library" -> R.drawable.ic_library
+        "ui-image" -> R.drawable.ic_image
         "ui-play" -> R.drawable.ic_play
         "ui-games" -> R.drawable.ic_games
         "ui-trophy" -> R.drawable.ic_trophy

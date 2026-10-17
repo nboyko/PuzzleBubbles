@@ -70,14 +70,18 @@ class HomeNavigationTest {
     @Test
     fun fixedNavigationOpensLibraryAndBackRestoresScrolledGames() {
         compose.onNodeWithTag("bottom-navigation").assertIsDisplayed()
+        compose.onNodeWithTag("inline-home-navigation").assertDoesNotExist()
         compose.onNodeWithText("Match Up").performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag("bottom-navigation").assertIsDisplayed()
         compose.onNode(hasText("Library") and hasAnyAncestor(hasTestTag("bottom-navigation")))
             .performClick()
-        compose.onNodeWithText("Library is coming soon.").assertIsDisplayed()
+        compose.onNodeWithText("My Library").assertIsDisplayed()
         compose.onNodeWithText("Game coming soon").assertDoesNotExist()
         compose.activityRule.scenario.recreate()
-        compose.onNodeWithText("Library is coming soon.").assertIsDisplayed()
+        compose.onNodeWithText("My Library").assertIsDisplayed()
+        compose.onNodeWithText("Photos").performScrollTo().performClick()
+        compose.onNodeWithText("No photos yet").assertIsDisplayed()
+        pressBack()
         pressBack()
         compose.onNodeWithText("Match Up").assertIsDisplayed()
         compose.onNodeWithTag("bottom-navigation").assertIsDisplayed()
@@ -86,19 +90,81 @@ class HomeNavigationTest {
     }
 
     @Test
-    fun libraryVisibleBackAndHomeNavigationReturnToHome() {
-        repeat(2) { index ->
+    fun libraryKeepsBottomNavigationAndReturnsHomeThroughBackOrHome() {
+        repeat(3) { index ->
             compose.onNode(hasText("Library") and hasAnyAncestor(hasTestTag("bottom-navigation")))
                 .performClick()
-            compose.onNodeWithText("Library is coming soon.").assertIsDisplayed()
+            compose.onNodeWithText("My Library").assertIsDisplayed()
+            compose.onNodeWithText("Puzzle Bubbles").assertDoesNotExist()
+            compose.onNodeWithTag("inline-home-navigation").assertDoesNotExist()
+            compose.onNodeWithTag("bottom-navigation").assertIsDisplayed()
+            compose.onNodeWithText("Library").performClick()
+            compose.onNodeWithText("My Library").assertIsDisplayed()
+            compose.onNodeWithText("Back").assertDoesNotExist()
             if (index == 0) {
-                compose.onNodeWithText("Back").performClick()
+                compose.onNodeWithContentDescription("Back").assertIsDisplayed().performClick()
+            } else if (index == 1) {
+                pressBack()
             } else {
                 compose.onNodeWithText("Home").performClick()
             }
-            compose.onNodeWithText("Library is coming soon.").assertDoesNotExist()
+            compose.onNodeWithText("My Library").assertDoesNotExist()
             compose.onNodeWithText("What would you like to play?").assertIsDisplayed()
         }
+    }
+
+    @Test
+    fun libraryChildrenHaveEmptyStatesAndBothBackActionsReturnToLibrary() {
+        openLibrary()
+        for ((title, emptyText) in listOf("Photos" to "No photos yet", "Sounds" to "No sounds yet")) {
+            for (systemBack in listOf(false, true)) {
+                compose.onNodeWithText(title).performScrollTo().assertHasClickAction().performClick()
+                compose.onNodeWithText(title).assertIsDisplayed()
+                compose.onNodeWithText(emptyText).assertIsDisplayed()
+                compose.onNodeWithTag("inline-home-navigation").assertDoesNotExist()
+                compose.onNodeWithTag("bottom-navigation").assertIsDisplayed()
+                if (systemBack) pressBack() else compose.onNodeWithContentDescription("Back").performClick()
+                compose.onNodeWithText("My Library").assertIsDisplayed()
+            }
+        }
+    }
+
+    @Test
+    fun mediaNavigationReturnsToLibraryOrHomeWithoutExtraDestinations() {
+        for (title in listOf("Photos", "Sounds")) {
+            openLibrary()
+            compose.onNodeWithText(title).performScrollTo().performClick()
+            compose.onNodeWithText("Library").performClick()
+            compose.onNodeWithText("My Library").assertIsDisplayed()
+            compose.onNodeWithText(title).performScrollTo().performClick()
+            compose.activityRule.scenario.recreate()
+            compose.onNodeWithTag("bottom-navigation").assertIsDisplayed()
+            compose.onNodeWithText("Home").performClick()
+            compose.onNodeWithTag("home-content").performScrollToIndex(0)
+            compose.onNodeWithText("What would you like to play?").assertIsDisplayed()
+        }
+    }
+
+    @Test
+    fun libraryChildDestinationsSurviveRecreationWithoutExtraBackStackEntries() {
+        for ((title, emptyText) in listOf("Photos" to "No photos yet", "Sounds" to "No sounds yet")) {
+            openLibrary()
+            compose.onNodeWithText(title).performScrollTo().performClick()
+            compose.activityRule.scenario.recreate()
+            compose.onNodeWithText(title).assertIsDisplayed()
+            compose.onNodeWithText(emptyText).assertIsDisplayed()
+            pressBack()
+            compose.onNodeWithText("My Library").assertIsDisplayed()
+            pressBack()
+            compose.onNodeWithTag("home-content").performScrollToIndex(0)
+            compose.onNodeWithText("What would you like to play?").assertIsDisplayed()
+        }
+    }
+
+    private fun openLibrary() {
+        compose.onNode(hasText("Library") and hasAnyAncestor(hasTestTag("bottom-navigation")))
+            .performClick()
+        compose.onNodeWithText("My Library").assertIsDisplayed()
     }
 
     private fun openGame(title: String) {

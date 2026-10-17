@@ -9,7 +9,11 @@
     <string name="home_welcome">WELCOME TO</string>
     <string name="library">Library</string>
     <string name="home">Home</string>
-    <string name="library_placeholder">Library is coming soon.</string>
+    <string name="my_library">My Library</string>
+    <string name="photos">Photos</string>
+    <string name="sounds">Sounds</string>
+    <string name="no_photos_yet">No photos yet</string>
+    <string name="no_sounds_yet">No sounds yet</string>
     <string name="home_question">What would you like to play?</string>
     <string name="home_hint">Pick a game to begin!</string>
 </resources>

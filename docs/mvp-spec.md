@@ -103,11 +103,17 @@ and **Match Up** for Matching. These are display names only: mechanic types and
 stable catalog IDs (`choose-it`, `matching`) remain unchanged. The home uses the
 corresponding `game-covers` artwork as card backgrounds with colored title bars.
 Home and Library use a fixed, full-width bottom navigation bar without top tabs
-or a floating container. Icons have small, matching-color labels underneath.
-The active icon sits in a raised soap bubble with a close, smoothly rounded
-cutout. Touch feedback highlights only the icon and label, with no background
-ripple. The bar stays visible while scrolling. Library opens a placeholder destination;
-actual library controls and behavior remain deferred.
+or a floating container. Icons have small, matching-color labels underneath;
+Home uses the existing games icon. The active icon sits in a raised soap bubble
+with a close, smoothly rounded cutout. Touch feedback highlights only the icon
+and label, with no background ripple. The bar stays visible while scrolling.
+Library opens **My Library**, with a game-style title and Back arrow, without
+the logo, top tabs, or bottom Back button. Photos and Sounds cards lead to
+separate empty screens. Those child screens keep Back to My Library and the
+fixed Home/Library navigation bar with Library selected. Home returns to Home;
+Library returns to My Library without adding destinations. Media addition,
+sample content, playback, and storage are deferred for this Library shell;
+existing game audio is unchanged.
 
 The home/navigation step alone does not fulfill the playable MVP definition of
 done in section 16. Acceptance is evaluated against the selected iteration step;
