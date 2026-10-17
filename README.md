@@ -70,7 +70,7 @@ commands, not claims that the current checkout has passed every check.
 - [MVP specification](docs/mvp-spec.md): intended product requirements.
 - [Current plan](docs/plan.md): next agreed feature and acceptance criteria.
 - [Iteration 1](docs/iterations/001-iteration.md): functional scope and pending work.
-- [AGENTS.md](AGENTS.md): project rules and explicit `$finalize-iteration` workflow.
+- [AGENTS.md](AGENTS.md): project rules and explicit `$finalize-feature` workflow.
 
 Finalization runs only when explicitly invoked. It verifies functionality against
 the current plan, synchronizes affected documentation, reconciles the iteration

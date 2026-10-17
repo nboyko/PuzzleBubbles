@@ -116,10 +116,10 @@ summarize the work in the response instead.
   `docs/content-assets.md` holds asset conventions. Permanent documentation must
   reflect verified current behavior. `docs/mvp-spec.md` defines requirements,
   including unimplemented scope; it is not an implementation status report.
-- At meaningful boundaries, explicitly invoke `$finalize-iteration` with the
+- At meaningful boundaries, explicitly invoke `$finalize-feature` with the
   iteration file and functional scope. Its workflow is in
-  [.agents/skills/finalize-iteration/SKILL.md](.agents/skills/finalize-iteration/SKILL.md).
-- Only an explicit `$finalize-iteration` invocation runs finalization and its
+  [.agents/skills/finalize-feature/SKILL.md](.agents/skills/finalize-feature/SKILL.md).
+- Only an explicit `$finalize-feature` invocation runs finalization and its
   documentation synchronization/reconciliation. Coding tasks and regular commits
   do not trigger either; separate documentation requests may be handled directly.
   After verification succeeds, invocation authorizes a scoped local commit of the
@@ -131,11 +131,18 @@ summarize the work in the response instead.
 
 ### Iteration tracking
 
+- Only the latest numbered iteration may remain open. Do not open a new iteration
+  until the user explicitly finishes the current one; keep earlier iterations
+  closed and do not reopen them automatically.
 - An iteration remains in progress until the user explicitly says it is finished.
   Completed implementation, passing tests, or a commit do not close an iteration.
 - On explicit finalization, reconcile the plan into a brief description of
   verified working functionality. Preserve unfinished requirements separately in
   the appropriate upcoming iteration; do not silently discard or expand them.
+- Each successfully finalized feature step adds a concise functional phase to
+  the selected iteration, defaulting to the latest existing iteration file.
+  Preserve previous phases and update an existing phase when re-finalizing the
+  same step. A finalized phase does not close the full iteration.
 - Iteration records do not require commit hashes, Git metadata, per-commit phases,
   implementation diaries, or detailed change logs. Git status does not determine
   functional completion.

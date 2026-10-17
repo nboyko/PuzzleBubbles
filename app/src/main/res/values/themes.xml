@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
-    <style name="Theme.PuzzleBubbles" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.PuzzleBubbles.Base" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@drawable/splash_background</item>
+        <item name="android:statusBarColor">#F0FCFF</item>
+        <item name="android:navigationBarColor">#F0FCFF</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+    <style name="Theme.PuzzleBubbles" parent="Theme.PuzzleBubbles.Base" />
 </resources>

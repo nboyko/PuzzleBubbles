@@ -1,21 +1,33 @@
 ---
-name: finalize-iteration
-description: On explicit invocation, verify implementation against docs/plan.md, synchronize documentation, reconcile the functional iteration, and commit the resolved implementation, current plan, and iteration record together.
+name: finalize-feature
+description: On explicit invocation, verify implementation against docs/plan.md, synchronize documentation, add a verified functional phase to the existing iteration, and commit the implementation, current plan, and iteration record together.
 ---
 
-# Finalize iteration
+# Finalize feature
 
-Run only when the user explicitly invokes `$finalize-iteration`. A request to
+Run only when the user explicitly invokes `$finalize-feature`. A request to
 create/edit this skill, a coding task, or a Git commit is not an invocation.
 Do not add hooks or implicit triggers. An invocation authorizes a scoped local
 commit after verification succeeds, unless the user requests review only.
 It does not authorize amending/rebasing history or pushing.
 Do not use Git metadata to define iteration status or require it in iteration records.
 
+Finalize one agreed feature as a phase within a larger, manually defined iteration.
+Finalizing the feature does not finish that iteration.
+
 ## Establish scope
 
 - Read applicable `AGENTS.md`, `docs/plan.md`, the selected iteration record, and relevant
   `docs/mvp-spec.md` and `docs/content-assets.md` sections.
+- Use the user-selected iteration record; otherwise use the latest existing
+  iteration by its numbered filename in `docs/iterations/`. Do not create a new
+  iteration automatically. If the latest iteration is already closed, ask where
+  to record the phase instead of reopening it or creating another file.
+- Only the latest numbered iteration may be open. Do not add phases to closed
+  earlier iterations or reopen them automatically. A new iteration requires the
+  user's explicit closure of the current one and authorization to create the
+  next record. If a selected record conflicts with this rule, clarify the target
+  before finalizing rather than silently changing iteration statuses.
 - Use `docs/plan.md` as the agreed step's expected feature, requirements, exclusions,
   and acceptance checks. If it is missing, undefined, or materially conflicts with
   the iteration/specification, stop and ask for the agreed scope; do not infer
@@ -86,6 +98,14 @@ functionality and a compact verification/limitations note. Do not create a phase
 per commit or retain commit hashes, Git lookups, implementation diaries, or
 detailed change logs.
 
+After verification succeeds, append the next numbered functional phase to the
+selected iteration record, for example `### Phase 2: Library empty screens`.
+Include only a short description of verified behavior, relevant check results,
+and any limitations. Preserve earlier phases; if the same functional step is
+finalized again, update its phase rather than duplicating it. A phase represents
+a verified feature step, not a Git commit. Do not add a verified phase when the
+verification gate fails or for a review-only invocation; report findings instead.
+
 Preserve unfinished requirements separately in the appropriate existing upcoming
 iteration, preserving its intent. Do not silently defer a critical requirement to
 pass the gate: a changed milestone boundary requires the user's explicit decision.
@@ -94,7 +114,10 @@ pending its placement; do not invent requirements or create a file without permi
 
 Closure reflects explicit user acceptance plus verification, not a commit.
 When reviewing a step inside an open iteration, update only the selected scope
-and keep unfinished work visible.
+and keep unfinished work visible. Finalizing a phase does not finish the full
+iteration. Keep its status in progress until the user explicitly says the
+iteration is finished and the verification gate passes; invoking this skill alone
+is not that confirmation.
 
 Mark the current plan's verified outcome briefly, preserving the original agreed
 requirements and acceptance criteria. Include that plan and the reconciled
