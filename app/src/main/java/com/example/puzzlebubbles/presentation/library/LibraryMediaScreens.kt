@@ -35,16 +35,6 @@ import com.example.puzzlebubbles.presentation.home.HomeNavigationBar
 import com.example.puzzlebubbles.ui.theme.HomeHeadingFontFamily
 
 @Composable
-fun PhotosScreen(onBack: () -> Unit, onHome: () -> Unit, modifier: Modifier = Modifier) {
-    EmptyLibraryScreen(
-        title = stringResource(R.string.photos),
-        message = stringResource(R.string.no_photos_yet),
-        iconAssetId = "ui-image", accent = Color(0xFF166EC5),
-        onBack = onBack, onHome = onHome, modifier = modifier,
-    )
-}
-
-@Composable
 fun SoundsScreen(onBack: () -> Unit, onHome: () -> Unit, modifier: Modifier = Modifier) {
     EmptyLibraryScreen(
         title = stringResource(R.string.sounds),

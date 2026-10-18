@@ -5,6 +5,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.lifecycle.ViewModelProvider
+import androidx.compose.runtime.CompositionLocalProvider
+import com.example.puzzlebubbles.presentation.components.LocalPhotoImages
 import com.example.puzzlebubbles.data.LocalGameRepository
 import com.example.puzzlebubbles.data.LocalAudioPlayer
 import com.example.puzzlebubbles.presentation.PuzzleBubblesApp
@@ -25,11 +27,13 @@ class MainActivity : ComponentActivity() {
         )[HomeViewModel::class.java]
         setContent {
             PuzzleBubblesTheme {
-                PuzzleBubblesApp(
-                    games = homeViewModel.games,
-                    gameRepository = gameRepository,
-                    audioPlayer = audioPlayer,
-                )
+                CompositionLocalProvider(LocalPhotoImages provides (application as PuzzleBubblesApplication).photoImages) {
+                    PuzzleBubblesApp(
+                        games = homeViewModel.games,
+                        gameRepository = gameRepository,
+                        audioPlayer = audioPlayer,
+                    )
+                }
             }
         }
     }

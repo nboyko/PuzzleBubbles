@@ -8,6 +8,8 @@ object LocalImageAssetResolver {
     fun resolveImage(assetId: String): Int = when (assetId) {
         "app-logo" -> R.drawable.ic_bubbles_logo
         "ui-back" -> R.drawable.ic_back_arrow
+        "ui-close" -> R.drawable.ic_close
+        "ui-plus" -> R.drawable.ic_plus
         "ui-sound" -> R.drawable.ic_sound
         "ui-library" -> R.drawable.ic_library
         "ui-image" -> R.drawable.ic_image

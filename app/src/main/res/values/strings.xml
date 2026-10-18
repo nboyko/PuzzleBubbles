@@ -16,4 +16,16 @@
     <string name="no_sounds_yet">No sounds yet</string>
     <string name="home_question">What would you like to play?</string>
     <string name="home_hint">Pick a game to begin!</string>
+    <string name="add_photo">Add Photo</string>
+    <string name="save_photo">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete_photo">Delete</string>
+    <string name="close">Close</string>
+    <string name="retry">Retry</string>
+    <string name="library_photo">Photo %1$d</string>
+    <string name="photo_preview">Photo preview</string>
+    <string name="photo_load_error">Couldn\'t open your photos. Please try again.</string>
+    <string name="photo_import_error">Couldn\'t add this photo. Try another image.</string>
+    <string name="photo_save_error">Couldn\'t save this photo. Check available storage and try again.</string>
+    <string name="photo_delete_error">Couldn\'t finish deleting this photo. Please try again.</string>
 </resources>

@@ -28,6 +28,9 @@ import com.example.puzzlebubbles.presentation.home.HomeScreen
 import com.example.puzzlebubbles.presentation.library.LibraryScreen
 import com.example.puzzlebubbles.presentation.library.PhotosScreen
 import com.example.puzzlebubbles.presentation.library.SoundsScreen
+import com.example.puzzlebubbles.presentation.library.PhotosViewModel
+import com.example.puzzlebubbles.PuzzleBubblesApplication
+import androidx.compose.ui.platform.LocalContext
 
 @Composable
 fun PuzzleBubblesApp(
@@ -76,7 +79,12 @@ fun PuzzleBubblesApp(
                 )
             }
             composable("library/photos") {
+                val app = LocalContext.current.applicationContext as PuzzleBubblesApplication
+                val photosModel: PhotosViewModel = viewModel(factory = PhotosViewModel.Factory(
+                    app.photoRepository, app.photoImages, app.photoProcessor, app.contentResolver,
+                ))
                 PhotosScreen(
+                    model = photosModel,
                     onBack = { navController.popBackStack() },
                     onHome = { navController.popBackStack("home", inclusive = false) },
                     modifier = Modifier.fillMaxSize(),

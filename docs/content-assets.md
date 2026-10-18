@@ -50,8 +50,8 @@ nested icon folders without a concrete need.
 | `audio/sfx/` | UI/gameplay feedback sounds, separate from content data |
 
 Current source inventory: two PNG covers, the supplied completion background
-`images/game-covers/bubbles-bg.png`, 15 PNG gameplay images, eight SVGs (including
-the logo and Photos icon), ten MP3 prompts in `audio/content/`, and the effects
+`images/game-covers/bubbles-bg.png`, 15 PNG gameplay images, ten SVGs (including
+the logo, Photos, close, and plus icons), ten MP3 prompts in `audio/content/`, and the effects
 `audio/sfx/pop.wav` and `audio/sfx/yay.mp3`. Preserve unreferenced
 gameplay source images; source inventory does not imply that every image is
 already packaged or used by a game.
@@ -87,7 +87,7 @@ unnecessary re-encoding or duplicate exports. Never change an extension without
 converting the actual format.
 
 The current runtime contains two WebP covers, ten 512px gameplay PNGs,
-the unchanged 887 × 1774 completion background `bubbles_bg.png`, eight UI/logo vectors,
+the unchanged 887 × 1774 completion background `bubbles_bg.png`, ten UI/logo vectors,
 ten `content_*.mp3` prompts, `sfx_pop.wav`, and `sfx_game_complete.mp3`. These
 format/size exceptions are intentional. Existing launcher assets remain in
 Android's drawable/mipmap folders.
@@ -105,6 +105,8 @@ Android's drawable/mipmap folders.
 | `ui-sound` | `icons/sound.svg` | `drawable/ic_sound.xml` |
 | `ui-library` | `icons/library.svg` | `drawable/ic_library.xml` |
 | `ui-image` | `icons/image.svg` | `drawable/ic_image.xml` |
+| `ui-close` | `icons/close.svg` | `drawable/ic_close.xml` |
+| `ui-plus` | `icons/plus.svg` | `drawable/ic_plus.xml` |
 | `app-logo` | `icons/bubbles_logo.svg` | `drawable/ic_bubbles_logo.xml` |
 | `ui-play` | `icons/play.svg` | `drawable/ic_play.xml` |
 | `ui-games` | `icons/games.svg` | `drawable/ic_games.xml` |
@@ -168,6 +170,29 @@ retain the sharp colored shapes. Decorative bubble artwork is still drawn in Com
   Do not store binary audio or images in Room.
 
 ## Text and metadata
+
+### User-imported photo storage convention
+
+Imported Library photos use private persistent storage at
+`filesDir/library/images/<photo-id>.webp`, separate from bundled assets and
+editable repository sources. Keep only the normalized 1024 × 1024 WebP; do not
+copy imported originals into `assets/source/` or `res/`. Respect EXIF orientation
+before center cropping; the normalized preview is encoded as lossy WebP at quality 85.
+
+Generate an app-owned stable photo ID. Store only ID, internal filename, and
+creation time in Room (`photos.db`); never image blobs or a gallery URI as the canonical asset.
+The stable rendering ID is `library-photo:<photo-id>`. Unsaved previews stay in memory.
+Resolve IDs through the data/rendering boundary rather than exposing paths,
+URIs, or Room entities to screens/domain models. Temporary staging files are not
+Library entries and must be cleaned after cancellation/failure or interruption.
+Reconcile file/metadata consistency before exposing persisted photos. Saved-photo
+deletion removes the metadata first, then the owned image file; reconciliation
+cleans up any unreferenced file after a failed/interrupted removal. Never delete
+the source gallery photo or bundled artwork. Imported files and their database
+are excluded together from cloud backup and device transfer. Bundled asset IDs,
+formats, and source/runtime folder conventions above remain unchanged.
+
+### Bundled content
 
 Normal UI text lives in `res/values/strings.xml`, separate from gameplay artwork.
 Current local content is a Kotlin preset exposed through `GameRepository`.

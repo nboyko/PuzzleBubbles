@@ -109,11 +109,25 @@ with a close, smoothly rounded cutout. Touch feedback highlights only the icon
 and label, with no background ripple. The bar stays visible while scrolling.
 Library opens **My Library**, with a game-style title and Back arrow, without
 the logo, top tabs, or bottom Back button. Photos and Sounds cards lead to
-separate empty screens. Those child screens keep Back to My Library and the
+separate destinations with empty placeholders when needed. Those child screens keep Back to My Library and the
 fixed Home/Library navigation bar with Library selected. Home returns to Home;
-Library returns to My Library without adding destinations. Media addition,
-sample content, playback, and storage are deferred for this Library shell;
-existing game audio is unchanged.
+Library returns to My Library without adding destinations. Do not add sample
+Library content or change existing game audio.
+
+The agreed Add Photo phase extends Photos with a single-image system picker
+(including its document-picker fallback) and an explicit-action preview modal.
+Use an icon-only plus button on the right of the Photos title, with the accessible
+label Add Photo. A system document-picker compatibility fallback is also permitted
+for a picker build that cannot reliably return a selected image.
+Photos retains bottom navigation; the modal covers it. Save stores only a
+center-cropped 1024 × 1024 WebP in private app storage, with generated stable IDs
+and Room metadata. Unsaved photos have Save/Cancel; tapping a saved photo opens
+Delete/Save and a top-right X to close. Delete removes only the app-owned saved
+photo, never the gallery original. Save on a saved photo currently closes without
+changes; saving edits belongs to the future editor. Manual editing, Library
+audio, and custom-photo gameplay remain outside
+this phase. See [the plan](plan.md) for lifecycle, failure recovery, and
+acceptance requirements; this paragraph defines scope, not implementation status.
 
 The home/navigation step alone does not fulfill the playable MVP definition of
 done in section 16. Acceptance is evaluated against the selected iteration step;

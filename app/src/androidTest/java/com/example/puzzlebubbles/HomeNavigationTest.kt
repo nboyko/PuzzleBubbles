@@ -1,8 +1,13 @@
 package com.example.puzzlebubbles
 
+import android.graphics.Bitmap
+import android.graphics.Color
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.hasAnyAncestor
@@ -13,10 +18,13 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.test.espresso.Espresso.pressBack
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import kotlinx.coroutines.runBlocking
+import java.util.UUID
 
 @RunWith(AndroidJUnit4::class)
 class HomeNavigationTest {
@@ -80,7 +88,7 @@ class HomeNavigationTest {
         compose.activityRule.scenario.recreate()
         compose.onNodeWithText("My Library").assertIsDisplayed()
         compose.onNodeWithText("Photos").performScrollTo().performClick()
-        compose.onNodeWithText("No photos yet").assertIsDisplayed()
+        assertMediaReady("Photos")
         pressBack()
         pressBack()
         compose.onNodeWithText("Match Up").assertIsDisplayed()
@@ -114,13 +122,13 @@ class HomeNavigationTest {
     }
 
     @Test
-    fun libraryChildrenHaveEmptyStatesAndBothBackActionsReturnToLibrary() {
+    fun libraryChildrenLoadAndBothBackActionsReturnToLibrary() {
         openLibrary()
-        for ((title, emptyText) in listOf("Photos" to "No photos yet", "Sounds" to "No sounds yet")) {
+        for (title in listOf("Photos", "Sounds")) {
             for (systemBack in listOf(false, true)) {
                 compose.onNodeWithText(title).performScrollTo().assertHasClickAction().performClick()
                 compose.onNodeWithText(title).assertIsDisplayed()
-                compose.onNodeWithText(emptyText).assertIsDisplayed()
+                assertMediaReady(title)
                 compose.onNodeWithTag("inline-home-navigation").assertDoesNotExist()
                 compose.onNodeWithTag("bottom-navigation").assertIsDisplayed()
                 if (systemBack) pressBack() else compose.onNodeWithContentDescription("Back").performClick()
@@ -147,17 +155,57 @@ class HomeNavigationTest {
 
     @Test
     fun libraryChildDestinationsSurviveRecreationWithoutExtraBackStackEntries() {
-        for ((title, emptyText) in listOf("Photos" to "No photos yet", "Sounds" to "No sounds yet")) {
+        for (title in listOf("Photos", "Sounds")) {
             openLibrary()
             compose.onNodeWithText(title).performScrollTo().performClick()
             compose.activityRule.scenario.recreate()
             compose.onNodeWithText(title).assertIsDisplayed()
-            compose.onNodeWithText(emptyText).assertIsDisplayed()
+            assertMediaReady(title)
             pressBack()
             compose.onNodeWithText("My Library").assertIsDisplayed()
             pressBack()
             compose.onNodeWithTag("home-content").performScrollToIndex(0)
             compose.onNodeWithText("What would you like to play?").assertIsDisplayed()
+        }
+    }
+
+    @Test
+    fun photosNavigationAndRecreationWorkWithSavedContent() = runBlocking {
+        val app = ApplicationProvider.getApplicationContext<PuzzleBubblesApplication>()
+        val draft = app.photoImages.putDraft(UUID.randomUUID().toString(),
+            Bitmap.createBitmap(1024, 1024, Bitmap.Config.ARGB_8888).apply { eraseColor(Color.CYAN) })
+        var savedId: String? = null
+        try {
+            app.photoRepository.refresh()
+            savedId = app.photoRepository.save(draft).id
+            openLibrary()
+            compose.onNodeWithText("Photos").performScrollTo().performClick()
+            assertMediaReady("Photos")
+            compose.onNodeWithTag("photos-grid").assertIsDisplayed()
+            compose.activityRule.scenario.recreate()
+            assertMediaReady("Photos")
+            compose.onNodeWithTag("photos-grid").assertIsDisplayed()
+            compose.onNodeWithContentDescription("Back").performClick()
+            compose.onNodeWithText("My Library").assertIsDisplayed()
+            pressBack()
+            assertHome()
+        } finally {
+            savedId?.let { app.photoRepository.delete(it) } // Remove only this test's photo.
+            app.photoImages.discard(draft)
+        }
+    }
+
+    private fun assertMediaReady(title: String) {
+        if (title == "Photos") {
+            // Photos may contain persisted images. Its isolated screen tests cover
+            // empty/grid states; navigation waits for asynchronous loading to finish.
+            compose.waitUntil(timeoutMillis = 5_000) {
+                compose.onAllNodes(hasContentDescription("Add Photo") and isEnabled())
+                    .fetchSemanticsNodes().isNotEmpty()
+            }
+            compose.onNodeWithContentDescription("Add Photo").assertIsDisplayed().assertIsEnabled()
+        } else {
+            compose.onNodeWithText("No sounds yet").assertIsDisplayed()
         }
     }
 
