@@ -17,6 +17,7 @@
     <string name="home_question">What would you like to play?</string>
     <string name="home_hint">Pick a game to begin!</string>
     <string name="add_photo">Add Photo</string>
+    <string name="edit_photo">Edit Photo</string>
     <string name="save_photo">Save</string>
     <string name="cancel">Cancel</string>
     <string name="delete_photo">Delete</string>

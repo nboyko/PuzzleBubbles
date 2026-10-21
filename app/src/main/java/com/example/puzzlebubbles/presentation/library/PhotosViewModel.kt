@@ -18,12 +18,16 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.UUID
 
-data class PhotoModal(val assetId: String, val savedId: String? = null)
+data class PhotoSource(val assetId: String, val width: Int, val height: Int)
+data class PhotoModal(val source: PhotoSource, val savedId: String? = null,
+                      val crop: CropTransform = CropTransform(source.width, source.height)) {
+    val assetId: String get() = source.assetId
+}
 enum class PhotoError { LOAD, IMPORT, SAVE, DELETE }
 
 class PhotosViewModel(
     private val repository: PhotoRepository,
-    private val prepare: suspend (Uri) -> String,
+    private val prepare: suspend (Uri) -> PhotoSource,
     private val discard: (String) -> Unit,
 ) : ViewModel() {
     var photos by mutableStateOf<List<LibraryPhoto>>(emptyList()); private set
@@ -63,8 +67,9 @@ class PhotosViewModel(
         viewModelScope.launch {
             var draft: String? = null
             try {
-                draft = prepare(uri)
-                modal = PhotoModal(draft)
+                val source = prepare(uri)
+                draft = source.assetId
+                modal = PhotoModal(source)
             } catch (e: CancellationException) { draft?.let(discard); throw e }
             catch (_: Exception) { error = PhotoError.IMPORT }
             catch (_: OutOfMemoryError) { error = PhotoError.IMPORT }
@@ -74,7 +79,7 @@ class PhotosViewModel(
     fun open(photo: LibraryPhoto) {
         if (busy || modal != null) return
         error = null
-        modal = PhotoModal(photo.assetId, photo.id)
+        modal = PhotoModal(PhotoSource(photo.assetId, 1024, 1024), photo.id)
     }
     fun close() {
         if (busy) return
@@ -86,19 +91,27 @@ class PhotosViewModel(
     fun save() {
         if (busy) return
         val current = modal ?: return
-        if (current.savedId != null) { close(); return }
+        if (current.savedId != null && current.crop.unchanged) { close(); return }
         busy = true
         error = null
         viewModelScope.launch {
             try {
                 repository.refresh()
-                val saved = repository.save(current.assetId)
-                focusId = saved.id
+                if (current.savedId == null) {
+                    val saved = repository.save(current.assetId, current.crop.region)
+                    focusId = saved.id
+                } else repository.replace(current.savedId, current.crop.region)
                 modal = null
             } catch (e: CancellationException) { throw e }
             catch (_: Exception) { error = PhotoError.SAVE }
+            catch (_: OutOfMemoryError) { error = PhotoError.SAVE }
             finally { busy = false }
         }
+    }
+    fun transform(zoomChange: Float, panX: Float, panY: Float, focalX: Float, focalY: Float, viewportSide: Float) {
+        if (busy) return
+        val current = modal ?: return
+        modal = current.copy(crop = current.crop.gesture(zoomChange, panX, panY, focalX, focalY, viewportSide))
     }
     fun delete() {
         if (busy) return
@@ -130,7 +143,7 @@ class PhotosViewModel(
             require(modelClass.isAssignableFrom(PhotosViewModel::class.java))
             val vm = PhotosViewModel(repository, prepare = { uri ->
                 val bitmap = withContext(Dispatchers.IO) { processor.prepare(resolver, uri) }
-                images.putDraft(UUID.randomUUID().toString(), bitmap)
+                PhotoSource(images.putDraft(UUID.randomUUID().toString(), bitmap), bitmap.width, bitmap.height)
             }, discard = images::discard)
             return modelClass.cast(vm)!!
         }

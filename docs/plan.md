@@ -1,597 +1,681 @@
-# Plan 002 — Add Photo to Library
+# Plan 003 — Image Crop Editor
 
-Status: **Verified — Iteration 2, Phase 2**. The full iteration remains in progress
-until the user explicitly finishes it. The agreed requirements below are retained
-with this feature; replace this plan only when the next feature is agreed.
-
-## Verified outcome
-
-Single-image selection opens an explicit Save/Cancel preview, respects EXIF
-orientation, and saves a centered 1024 × 1024 WebP with generated IDs and Room
-metadata. Photos displays saved images; Delete removes only the Library copy,
-while saved-photo Save/X close unchanged. Rotation, rapid actions, persistence,
-and interrupted-operation reconciliation are covered.
-
-Follow-up decisions: Add Photo is an icon-only plus on the right of the header.
-The affected Android 16 Google picker build uses the system document picker
-because Preview → Select returns cancellation without an image; other builds
-retain the AndroidX picker flow. See [README](../README.md) for the exact workaround.
-
-Verification: debug build, six unit tests, 36 device tests, and lint passed with
-zero errors and 24 non-blocking warnings. Manual checks covered native picker
-selection, the compatibility fallback, save/delete, restart, unsaved-preview
-process death, and small-screen/enlarged-text layout. Older-device fallback and
-actual disk-full behavior remain unverified manually; injected write/rename,
-metadata, and cleanup failures are tested. No critical blockers remain.
+Status: **Agreed scope; not implemented**. This is the next feature phase of
+Iteration 2. The full iteration remains open until the user explicitly finishes it.
 
 ## Goal
 
-Allow a parent to add one photo from the Android device to the Puzzle Bubbles photo library.
+Extend the existing photo-library flow with an interactive image editor.
 
-The selected image is:
+The parent can choose exactly which square area of an image Puzzle Bubbles should save by:
 
-1. selected using the Android system Photo Picker;
-2. shown on a dedicated preview screen;
-3. automatically center-cropped to a square;
-4. normalized to **1024 × 1024**;
-5. saved into Puzzle Bubbles app-owned storage;
-6. displayed in the Photos library.
+- dragging the image with one finger;
+- zooming with a pinch gesture.
 
-This iteration does **not** include manual crop, pan, or zoom controls.
+The crop area itself always remains a fixed square.
 
----
-
-## 1. Photos Screen Header
-
-Update the existing Photos screen header.
-
-It should contain:
+This editor is used in two places:
 
 ```text
-←    Photos                 Add Photo
+new photo
+Photo Picker
+    ↓
+Image Editor
+    ↓
+Save new photo
+
+existing photo
+Photos Library
+    ↓
+Tap saved photo → Image Editor directly
+    ↓
+Replace existing photo
 ```
 
-or the equivalent layout matching the current Puzzle Bubbles design.
+The application still stores only the processed **1024 × 1024** image.
 
-Keep the existing Back arrow and Photos title; no parrot or new mascot is required.
-
-Add a clearly visible **Add Photo** button near the title area.
-
-The button should use the established Puzzle Bubbles button style rather than introducing a new control style.
-
-The Add Photo button is available from the normal Photos library screen.
+The original gallery image is not retained.
 
 ---
 
-## 2. Launch Android Photo Picker
+## 1. Editor Modal
 
-When **Add Photo** is pressed:
+The image editor is a modal overlay on Photos, using a rounded panel over a
+dimmed background. Keep it in the existing Photos flow; do not add a separate
+page or navigation destination. The panel adapts to smaller screens and rotation.
 
-- launch the Android system Photo Picker;
-- allow image selection only;
-- allow selection of exactly **one image**.
+Do not display bottom navigation.
 
-Use Android's single-item `PickVisualMedia` flow.
+Conceptually, for a new photo:
 
-If Photo Picker is unavailable, the contract's automatic system document-picker
-fallback is supported and must still select exactly one image. No custom
-gallery or broad storage permission is needed. See the
-[Android Photo Picker documentation](https://developer.android.com/training/data-storage/shared/photo-picker).
+```text
+                           ×
 
-Do not:
+┌────────────────────────────┐
+│                            │
+│       darkened image       │
+│                            │
+│     ┌──────────────┐       │
+│     │              │       │
+│     │ visible crop │       │
+│     │     area     │       │
+│     │              │       │
+│     └──────────────┘       │
+│                            │
+│       darkened image       │
+│                            │
+└────────────────────────────┘
 
-- build a custom gallery browser;
-- request broad photo/storage permission;
-- allow multiple selection in this iteration.
+            Save
+```
 
-If the user closes the picker without selecting anything, remain on the Photos screen and make no changes.
+The exact visual styling should follow the existing Puzzle Bubbles design.
+
+For a **new, unsaved photo**, show a full-width Save button at the bottom and an accessible
+X close control at the top right. Do not show Delete or a header Back arrow.
+
+For a **saved photo**, show Delete / Save at the bottom and an accessible X
+close control at the top right. X cancels unsaved edits. There is no bottom
+Cancel button and no intermediate viewer or separate Edit action.
+
+Both states cover and block the Photos page and bottom navigation. There is no
+visible editor title. Tapping the backdrop cancels editing, like Back and X in
+section 11; dismissal is blocked during Save/Delete.
+
+---
+
+## 2. Fixed Crop Area
+
+The saved area is always:
+
+```text
+1 : 1
+```
+
+The crop square:
+
+- remains centered on screen;
+- does not move;
+- does not resize;
+- represents exactly what will be saved.
+
+These constraints apply within the current layout: there are no user resizing
+handles. After rotation or a screen-size change, the viewport may adapt to the
+available editor area while preserving the selected source region.
+
+The **image moves underneath the crop area**, rather than moving the crop rectangle over the image.
+
+This gives the interaction a simple mental model:
+
+```text
+crop window stays still
+        +
+photo moves behind it
+```
 
 ---
 
-## 3. Selected Photo Processing
+## 3. Crop Overlay
 
-After the user selects an image, do not save the original photo directly into the library.
+Make the crop area visually obvious.
 
-Read enough information to:
+The image should remain visible across the editor, but everything **outside the crop square** should have a semi-transparent dark overlay.
 
-- verify that the selected content is a valid supported image;
-- preserve the source image's intended visual orientation, including EXIF rotation/mirroring;
-- determine its dimensions;
-- prepare it safely for preview and normalization.
+Conceptually:
 
-Avoid unnecessarily decoding a very large camera image at its full resolution when a smaller sampled decode is sufficient.
+```text
+          dark overlay
+             ↓
+┌─────────────────────────┐
+│█████████████████████████│
+│████┌───────────────┐████│
+│████│               │████│
+│████│ saved content │████│
+│████│               │████│
+│████└───────────────┘████│
+│█████████████████████████│
+└─────────────────────────┘
+```
 
-Normal modern phone photos should not be rejected simply because the original file is large.
+Inside the square:
 
-The important size constraint applies to the **stored Puzzle Bubbles image**, not the source image.
+- image remains at normal brightness;
+- no tint should alter the preview.
 
----
+Outside the square:
 
-## 4. Photo Modal
+- apply a translucent dark scrim.
 
-After a valid image is selected, present a full-screen modal/task overlay above
-Photos. It covers the Photos content and bottom navigation and prevents interaction
-with both. Reuse the existing app styling; do not introduce another navigation bar.
+Optionally add a subtle border around the crop square if it improves clarity.
 
-For an unsaved selection, show **Add Photo**, a large square preview, and only
-**Cancel** and **Save**. There is no Delete action for an unsaved photo.
+Avoid a heavy grid or professional photo-editor UI.
 
-Tapping a saved photo in the grid opens the saved-photo modal with **Delete**,
-**Save**, and a top-right **X** close control. There is no bottom Cancel action
-in this state. X closes the modal without changing the saved photo.
-No modal Back arrow, Home shortcut, or background media actions are available.
-Outside taps and system Back do not dismiss the modal; dismissal is explicit.
-
-The preview represents the exact centered square crop that will be saved, after
-respecting the source's orientation. Landscape images lose equal left/right
-margins; portrait images lose equal top/bottom margins. No pan, zoom, or manual
-rotation is available. Small images are still normalized to exactly 1024 x 1024.
-Use the same prepared normalized image for preview and Save, avoiding a second
-source read that could produce a different result. No original is retained.
-
-Preserve the selected preview and any in-progress operation across activity
-rotation. Rotation must not reset the selection, save automatically, or start
-another operation. Keep bitmap work off the main thread and out of saved-state
-bundles.
-
-If Android kills the process during an unsaved preview, reopen Photos without
-restoring or saving that preview. Do not automatically retry an interrupted Save.
-Previously committed photos remain available; reconcile incomplete writes first.
+This should remain visually simple and friendly.
 
 ---
-## 5. Modal Controls
 
-### New, unsaved photo
+## 4. Initial Image Position
 
-- **Cancel** discards the unsaved selection and returns to Photos without saving.
-- **Save** accepts the displayed center crop and explicitly starts normalization
-  and persistence. Nothing is saved merely by opening or rotating the preview.
-- **Delete** is not shown.
+### New image from gallery
 
-### Existing, saved photo
+When an image first enters the editor:
 
-- Tapping a Library grid photo opens its saved-photo modal using the stable ID.
-- **Delete** actually deletes that saved Library photo and its app-owned image.
-  It never deletes the original gallery photo or bundled game artwork. On success,
-  close the modal and remove the item immediately; restore the empty placeholder
-  when the last photo is deleted.
-- **Save** closes the modal and returns to Photos without rewriting the image,
-  changing metadata/ID, or creating a duplicate. There are no edits to persist
-  in this phase. Future editor functionality will use this same Save action to
-  persist explicit edits; replacement selection/editing is not implemented now.
-- A large, accessible top-right **X** closes the modal without saving or deleting.
-  It is the cancel/close control for saved photos; do not add a bottom Cancel.
+1. orient it correctly;
+2. scale it so the crop square is completely filled;
+3. center the image inside the crop square.
 
-Allow at most one operation at a time. Lock conflicting controls immediately when
-Save/Delete/Cancel/X is accepted; guard handlers as well as disabling
-controls. Repeated taps must not create duplicate operations or navigation events.
-Keep operation state during rotation. After a failed Save/Delete, remain in the
-modal, show a friendly error, and allow an explicit retry once cleanup completes.
-Closing the modal never triggers an automatic save, update, or delete.
+This produces the same **center crop** currently used by the application.
 
-Do not implement dragging, pinch zoom, crop handles, manual rotation, or filters.
-Manual editing can extend this modal in a separately agreed future phase.
+Saving without interaction should produce the same centered crop and visual
+composition as the current automatic behavior; byte-identical WebP encoding is
+not required.
 
----
-## 6. Saved Image Format
+The current processor crops and normalizes before showing the preview. Adapt
+this pipeline to keep a sampled, correctly oriented, **uncropped** editing
+source temporarily, so panning can reveal areas outside the initial square.
+Do not feed an already center-cropped 1024 × 1024 draft into the new-photo editor.
+Produce the final normalized crop only on Save; do not retain the original afterward.
 
-When Save is pressed:
+### Existing library image
 
-1. crop the source to the centered square represented by the preview;
-2. scale the result to exactly:
+Existing library images are already:
 
 ```text
 1024 × 1024
 ```
 
-3. encode the result as WebP;
-4. save only this normalized result.
+When editing one:
 
-Do **not** keep the original imported image.
+- show the existing saved image;
+- initially fill the crop square exactly;
+- use it as the new editing source.
 
-The resulting library should therefore contain predictable, reasonably small images regardless of the original camera resolution.
+Because the original photo is not retained, subsequent edits operate on the already processed image.
+
+Some quality loss after repeated zooming/cropping is accepted for this MVP.
+
+---
+
+## 5. Drag / Pan
+
+Allow the parent to move the image using one-finger dragging.
+
+Example:
+
+```text
+finger →→→
+
+crop stays fixed
+
+image →→→
+```
+
+Movement should feel direct:
+
+- no inertia;
+- no fling;
+- no snapping between positions.
+
+The image follows the finger.
+
+### Movement constraints
+
+The image must always completely cover the crop square.
+
+The user must never be able to create:
+
+```text
+┌──────────────┐
+│ IMAGE        │
+│ IMAGE        │
+│ IMAGE   EMPTY│
+│         EMPTY│
+└──────────────┘
+```
+
+When the image reaches its valid movement boundary, additional dragging in that direction should simply stop moving it.
+
+---
+
+## 6. Pinch to Zoom
+
+Support standard two-finger pinch zoom.
+
+```text
+pinch inward  → zoom out
+pinch outward → zoom in
+```
+
+Zoom should feel continuous rather than stepping through predefined levels.
+
+### Minimum zoom
+
+The minimum zoom is the scale at which the image still completely covers the crop square.
+
+The parent cannot zoom out beyond this point.
+
+For example, for a landscape image:
+
+```text
+┌───────────────────────────┐
+│                           │
+│     ┌─────────────┐       │
+│     │ crop square │       │
+│     └─────────────┘       │
+│                           │
+└───────────────────────────┘
+```
+
+the initial center-crop scale is also the minimum scale.
+
+For an already saved square image, its initial full-square view is the minimum zoom.
+
+### Maximum zoom
+
+Apply a reasonable maximum zoom so accidental gestures cannot create absurd magnification.
+
+Something around:
+
+```text
+4× relative to minimum scale
+```
+
+is a sensible initial limit.
+
+This value can be adjusted after testing.
+
+---
+
+## 7. Combined Gestures
+
+Dragging and zooming should work naturally together.
+
+A two-finger gesture may change:
+
+```text
+scale
++
+position
+```
+
+at the same time.
+
+Rotation should be ignored.
+
+Do not rotate the image in response to twisting gestures.
+
+Jetpack Compose provides `transformable` / transform gesture APIs for exactly this kind of pan and zoom interaction.
+
+Use rendering transforms rather than recomputing the bitmap continuously while the parent is moving it. Compose's `graphicsLayer` supports scale and translation at draw time, which is appropriate for interactive preview transformations.
+
+---
+
+## 8. Saving
+
+Pressing **Save** converts the current editor state into the final library image.
+
+The saved result must correspond exactly to the visible crop square.
 
 Conceptually:
 
 ```text
-source:
-4032 × 3024 JPEG
+original / current source image
+        +
+zoom
+        +
+translation
+        +
+square viewport
         ↓
-center crop
+render crop
         ↓
-resize
+1024 × 1024
         ↓
-1024 × 1024 WebP
-        ↓
-Puzzle Bubbles library
+WebP
 ```
 
-Use reasonable lossy image quality appropriate for a children's game/photo thumbnail use case.
+Do not save the entire transformed image.
 
-A quality around **80–85** is a sensible target unless testing shows a reason to adjust it.
+Only the area visible inside the crop square becomes the output.
 
 ---
 
-## 7. Local File Storage
+## 9. Saving a New Photo
 
-Store processed images in app-owned persistent storage.
-
-Use internal persistent storage, `filesDir/library/images/`, for example:
+For a newly selected gallery image:
 
 ```text
-library/
-└── images/
-    ├── <photo-id>.webp
-    ├── <photo-id>.webp
-    └── ...
-```
-
-Use generated stable IDs rather than names derived from the original gallery filename.
-
-Do not expose filesystem paths directly to presentation/game logic.
-
-Android app-specific storage does not require additional storage permissions and is suitable for files that belong to the application.
-
----
-
-## 8. Photo Metadata
-
-Introduce the minimum persistent metadata required for the Photos library.
-
-Room is appropriate now because the feature contains real persistent structured data and later library features will also need persistence. Android recommends Room over working directly with SQLite.
-
-Keep the first model small.
-
-Conceptually:
-
-```kotlin
-PhotoEntity(
-    id: String,
-    fileName: String,
-    createdAt: Long
-)
-```
-
-The exact schema may follow existing project conventions.
-
-Width and height do not need to be stored if every library image is guaranteed to be 1024 × 1024.
-
-Do not store:
-
-- the bitmap itself;
-- the original gallery URI as the canonical image;
-- the original image;
-- category;
-- tags;
-- game associations.
-
-Binary image data belongs in the filesystem, not Room.
-
----
-
-## 9. Save Transaction / Failure Handling
-
-A photo should only appear in the library after both:
-
-- the normalized file was written successfully;
-- its metadata was persisted successfully.
-
-Avoid leaving orphan files or database records when part of the operation fails.
-
-### File/database consistency
-
-A filesystem write and a Room transaction are not one atomic operation. Use a
-small, serialized save pipeline rather than claiming cross-storage atomicity:
-
-1. Allocate one stable photo ID for the accepted Save operation.
-2. Encode to a temporary file under the private Library image directory, close
-   it successfully, then rename it to `<photo-id>.webp` on the same filesystem.
-3. Insert metadata in a Room transaction only after the final image exists.
-   Publish the new photo only after that transaction commits.
-4. On ordinary failure, remove this operation's temporary file and any final file
-   that has no committed metadata. Never delete an already committed photo during
-   retry or cleanup. Re-enable actions only after cleanup is complete.
-5. Before loading/exposing Library content after startup, run reconciliation
-   serialized with saves: remove stale staging files and unreferenced final files;
-   remove metadata for missing/unreadable files so broken items are not displayed.
-   Restrict cleanup to the owned Library directory. If reconciliation fails,
-   report a recoverable error rather than exposing inconsistent data.
-
-A crash after metadata commits preserves the photo. A crash before commit leaves
-no visible photo after reconciliation. Do not add a background worker framework
-or a generic transaction system for this one operation.
-
-
-### Saved-photo deletion consistency
-
-Serialize deletion with saves and startup reconciliation. First remove the photo
-metadata in a Room transaction, then remove its app-owned file. If the database
-transaction fails, leave the file/photo intact and report the failure. If file
-removal fails after metadata commits or the process stops between these steps,
-the file is unreferenced and startup reconciliation retries cleanup; never
-restore a deleted entry just because its file remains. Restrict file removal to
-the selected stable ID inside the owned image directory. Do not delete source
-URIs, bundled artwork, or unrelated files. Repeated deletion is safe and cannot
-remove another photo.
-Examples:
-
-### Processing failure
-
-```text
-Couldn't add this photo.
-Try another image.
-```
-
-### Storage failure
-
-```text
-Couldn't save this photo.
-Check available device storage and try again.
-```
-
-Do not display stack traces, MIME details, URI information, or technical Android errors to the parent.
-
----
-
-## 10. Successful Save
-
-After Save completes successfully:
-
-1. return to the Photos screen;
-2. display the new image in a photo grid introduced by this feature;
-3. make it immediately visible without restarting the app;
-4. optionally show lightweight confirmation:
-
-```text
-Photo added
-```
-
-Use a Snackbar or equivalent non-blocking feedback rather than a confirmation dialog.
-
----
-
-## 11. Persistence
-
-Saved photos must survive:
-
-- navigation away from Photos;
-- switching between Home and Library;
-- app restart;
-- process recreation.
-
-On startup/re-entry, the Photos screen should load the persisted photo metadata and resolve the corresponding app-owned files.
-
-The current Photos screen is empty: there are no sample photos or existing grid. Introduce the real photo grid and retain the empty placeholder when no records exist.
-
-Do not add sample content or seed user-photo records from bundled game artwork.
-
----
-
-## 12. Image Validation
-
-Do not impose a small source-file limit such as:
-
-```text
-maximum 5 MB
-```
-
-because the source is normalized before storage.
-
-Instead validate that:
-
-- selected content can actually be decoded as an image;
-- dimensions are valid;
-- orientation can be handled;
-- processing succeeds;
-- enough storage is available for the normalized output.
-
-Protect against corrupt or unreasonable input without rejecting normal high-resolution smartphone photos.
-
----
-
-## 13. Memory Safety
-
-Do not assume that the source photo is small.
-
-A source image may be:
-
-```text
-4000 × 3000
-6000 × 4000
-or larger
-```
-
-Do not keep an unnecessarily full-resolution bitmap in memory.
-
-The implementation should use an appropriately sampled decode / image-loading strategy for preview and final 1024 × 1024 generation.
-
-The goal is:
-
-```text
-inspect source dimensions
-        ↓
-decode at appropriate scale
-        ↓
-apply orientation
-        ↓
-center crop
-        ↓
-render 1024 × 1024
-```
-
-rather than blindly decoding enormous images first.
-
----
-
-## 14. Navigation
-
-Expected flow:
-
-```text
-Library
-   ↓
+Photo Picker
+    ↓
+Image Editor
+    ↓
+Save
+    ↓
+create new stable photo ID
+    ↓
+write 1024 × 1024 WebP
+    ↓
+persist metadata
+    ↓
 Photos
-   ↓ Add Photo
-System Photo Picker
-   ↓ select
-Photo Preview
-   ├── Cancel → Photos
-   └── Save   → Photos + new image
 ```
 
-Both modal states require explicit actions. Unsaved photos use Save/Cancel; saved photos use Delete/Save and the top-right X. System Back and outside taps do nothing while either modal is open.
+The gallery original is only a temporary input.
 
-The bottom navigation remains hidden on the preview screen.
-
-Back from Photos still returns to Library according to the established navigation design.
-
-Photos retains the fixed Home/Library bottom navigation with Library selected. Home returns directly to Home; Library returns to My Library. The modal covers and disables these controls until it closes.
+After successfully producing the Puzzle Bubbles image, do not retain a private copy of the original.
 
 ---
 
-## 15. Architecture
+## 10. Editing an Existing Photo
 
-This feature introduces the first real user-managed media persistence.
+Tapping a saved photo in the grid opens the same editor directly.
 
-Keep responsibilities separated:
+The source is the currently stored:
 
 ```text
-presentation
-    Photos screen
-    Preview screen
-
-domain/application
-    Add photo operation
-
-data
-    photo metadata persistence
-    app-owned image files
-    image processing
+1024 × 1024 WebP
 ```
 
-Do not put file-writing and bitmap-processing logic directly into Compose UI.
+When Save is pressed:
 
-Do not introduce a generic media framework merely because audio will be added later.
+- keep the same photo/media ID;
+- preserve creation time and grid position;
+- produce a new 1024 × 1024 WebP;
+- replace the previous processed file;
+- keep references from future game content stable.
 
-Create reusable abstractions only where this feature already needs them.
+Do not create a second library item merely because an existing photo was edited.
 
----
+If the selected region is unchanged, Save simply closes the editor without
+rewriting the image, changing metadata, or introducing another lossy encode.
 
-## 16. No External Crop Library Yet
+Use a safe replacement strategy so a failed encode/write cannot destroy the existing image.
 
-Do not add uCrop or another cropping dependency in this iteration.
-
-The crop behavior is currently deterministic:
+Conceptually:
 
 ```text
-center square
-→ resize to 1024 × 1024
+existing.webp
+      ↓
+edit
+      ↓
+write temporary file
+      ↓
+success?
+   ├── yes → replace existing.webp
+   └── no  → keep existing.webp untouched
 ```
 
-This can be implemented with normal Android image processing.
+Serialize replacement with saves, deletion, and reconciliation. Validate and
+finish the temporary output before replacing the current file; never delete or
+truncate the previous image first. Recovery after process interruption must
+leave a complete valid old or new version, with the same stable ID, and clean
+up incomplete temporary/backup files safely. A failed replacement keeps the
+previous photo intact and leaves the editor open for explicit retry.
 
-A crop library or custom Compose crop editor should be evaluated in the next iteration when manual pan/zoom editing is introduced.
+After success, publish the changed image and refresh grid thumbnails and future
+editor loads immediately. The current renderer reloads by asset ID only; the
+replacement path must invalidate stale image state without changing the photo ID.
+
+Delete is available only for a saved photo. It removes that Library record and
+its owned image, discards any unsaved edits, and returns to Photos. Preserve the
+existing deletion recovery behavior; never delete the gallery original or
+bundled artwork. A failure keeps the editor open with a friendly retry message.
 
 ---
 
-## 17. Explicitly Deferred
+## 11. Cancel / Back
 
-Do not implement yet:
+Tapping the backdrop or the top-right **X**, or pressing system Back, returns
+without saving changes.
 
-- multiple photo selection;
-- manual cropping;
-- drag/pan;
+System Back behaves the same way.
+
+For a newly selected image:
+
+```text
+Cancel
+→ discard temporary selection
+→ Photos
+```
+
+For an existing image:
+
+```text
+Cancel
+→ keep existing image unchanged
+→ Photos
+```
+
+No confirmation dialog is required if no persistent change has happened yet.
+
+While Save or Delete is in progress, disable and guard all conflicting actions,
+including Back/Cancel/X and further gestures. Accept at most one operation;
+rapid taps and activity recreation must not duplicate Save/Delete or navigation.
+After failure, preserve the edit and allow an explicit retry once cleanup finishes.
+
+---
+
+## 12. Editor State
+
+The editor should conceptually maintain:
+
+```text
+source image
+crop viewport size
+minimum scale
+current scale
+maximum scale
+translation X
+translation Y
+```
+
+The transformation state is UI/editor state.
+
+Do not write a new bitmap to disk while the parent is dragging or zooming.
+
+Generate the final bitmap only when Save is pressed.
+
+Preserve the temporary source, selected source region, zoom, and any in-progress
+operation across activity rotation. Store crop coordinates relative to the
+source rather than raw screen pixels; keep bitmap work off the main thread and
+bitmaps out of saved-state bundles. Recalculate layout bounds without resetting
+the crop or saving automatically.
+
+After process death, reopen Photos without restoring or saving unsaved edits.
+For saved-photo edits, keep the stored version unchanged unless Save or Delete
+had already committed; reconcile interrupted operations before exposing Library content.
+Do not automatically retry an interrupted Save or Delete.
+
+---
+
+## 13. Transformation Constraints
+
+Every time scale or translation changes:
+
+1. calculate the transformed bounds of the image;
+2. ensure those bounds completely contain the crop square;
+3. clamp invalid translation;
+4. clamp scale between minimum and maximum.
+
+This rule must hold continuously during interaction.
+
+The crop viewport must never expose the background.
+
+---
+
+## 14. Image Quality
+
+### New gallery image
+
+Use enough source resolution to produce a high-quality final:
+
+```text
+1024 × 1024
+```
+
+Avoid unnecessarily loading huge full-resolution camera bitmaps into memory.
+
+Choose bounded decoding appropriate to the crop, output resolution, and up to
+4× zoom, rather than reusing the previous 1024-only decode target. Preserve the
+uncropped aspect ratio and EXIF orientation. Do not promise additional detail
+that a small source does not contain or archive originals for later editing.
+
+### Existing image
+
+The available source is already 1024 × 1024.
+
+If the parent zooms into it and saves again, some quality reduction is expected.
+
+This tradeoff is intentional because Puzzle Bubbles does not retain original gallery files.
+
+Do not introduce an original-image archive solely to avoid this limitation.
+
+---
+
+## 15. Reuse
+
+Use the **same image editor implementation** for:
+
+```text
+new gallery image
+existing library image
+```
+
+Do not build separate crop UIs for these cases.
+
+The difference should only be:
+
+```text
+input source
++
+save behavior
+```
+
+---
+
+## 16. No External Crop Library Required
+
+For this version, do not introduce an external image-cropping library unless implementation reveals a concrete blocker.
+
+The required functionality is deliberately small:
+
+- fixed 1:1 viewport;
+- pan;
 - pinch zoom;
-- rotation;
-- image filters;
-- retaining original images;
-- manual editing or replacement of existing photos;
-- photo labels;
-- categories;
-- search;
-- cloud backup/sync;
-- backend;
-- using custom photos inside games.
+- constrained bounds;
+- render final crop.
+
+Compose already provides the gesture and transformation primitives required for the interactive portion.
+
+Keeping this custom also allows the editor to visually match Puzzle Bubbles instead of embedding a generic third-party crop screen.
+
+---
+
+## 17. Explicitly Out of Scope
+
+Do not add:
+
+- movable crop rectangle;
+- resize handles;
+- different aspect ratios;
+- free-form crop;
+- image rotation;
+- flip/mirror;
+- filters;
+- brightness/contrast controls;
+- automatic face/object detection;
+- undo history;
+- original-photo storage;
+- arbitrary output dimensions;
+- multi-image editing.
 
 ---
 
 ## 18. Acceptance Criteria
 
-This feature is complete when:
+The image editor is complete when:
 
-1. Photos has an **Add Photo** button near its title/header.
-2. Pressing Add Photo launches the Android system Photo Picker.
-3. Only one image can be selected.
-4. Canceling the system picker changes nothing.
-5. Selecting a valid photo opens a dedicated preview screen.
-6. Bottom navigation is not shown on the preview screen.
-7. The preview displays a centered square crop.
-8. The preview accurately represents what will be saved.
-9. Unsaved photos have Save/Cancel only; Cancel returns without saving or changing any saved photo.
-10. Save generates a 1024 × 1024 image.
-11. The stored format is WebP.
-12. Only the processed image is kept; the original is not copied permanently.
-13. The stored image has a stable generated ID.
-14. Image metadata is persisted locally.
-15. Binary image data is not stored in Room.
-16. The newly saved photo appears immediately in the Photos grid.
-17. The photo remains available after restarting the application.
-18. High-resolution normal phone photos do not cause excessive memory use.
-19. Invalid/corrupt images fail gracefully.
-20. Ordinary failures are cleaned up; process-interrupted saves are reconciled before Library data is exposed.
-21. Existing Library navigation continues to work.
-22. Existing games remain unaffected.
-23. The project builds and relevant tests pass.
-24. Photos keeps bottom navigation; the modal covers it and blocks background interaction.
-25. Preview and operation state survive rotation; no automatic or duplicate Save/Delete occurs.
-26. Process death during an unsaved preview returns to Photos without restoring or saving it.
-27. System picker fallback is supported without broad media permissions.
-28. System Back/outside taps cannot dismiss either explicit-action modal.
-29. Tapping a saved photo opens Delete/Save controls and a top-right X; X closes without changes.
-30. Delete removes only the selected saved Library photo, updates the grid immediately, and survives restart.
-31. Failed/interrupted deletes recover consistently without duplicate deletion or broken visible entries.
-32. Save on a saved photo closes without modifying files, metadata, IDs, or creating another photo.
+1. Selecting a new photo opens the editor before saving it.
+2. The editor displays a fixed centered square crop area.
+3. The area outside the crop square is visibly darkened.
+4. The area inside the crop square shows the image at normal brightness.
+5. A newly selected image initially uses a centered crop.
+6. Saving a new photo without interaction produces the current center-crop composition, without requiring byte-identical encoding.
+7. The image can be dragged with one finger.
+8. The image can be zoomed using a two-finger pinch.
+9. Pan and zoom can occur naturally in the same interaction.
+10. Rotation gestures do not rotate the image.
+11. Zoom cannot go below the minimum required to cover the crop square.
+12. Zoom is limited to a reasonable maximum.
+13. Panning cannot expose an empty area inside the crop square.
+14. The crop square has no user move/resize controls; layout changes preserve the selected source region.
+15. Save produces exactly the region visible in the crop square.
+16. Saved output remains exactly 1024 × 1024.
+17. Saved output uses the existing WebP storage pipeline.
+18. Cancel does not persist any changes.
+19. System Back behaves like Cancel except while Save/Delete is committing.
+20. Tapping a saved photo opens the same editor directly, with Delete/Save at the bottom and X at the top right.
+21. Editing an existing photo keeps its stable media ID.
+22. Saving an edit safely replaces the existing processed image.
+23. Failure while replacing an image does not destroy the previous version.
+24. The original gallery image is not retained after a new photo is saved.
+25. Existing Library and game functionality remains unaffected.
+26. Saving an unchanged existing photo closes without rewriting files or metadata.
+27. Editing preserves creation time and grid position, and successful replacement refreshes thumbnails immediately.
+28. Interrupted replacements recover a complete old or new version without losing the photo or changing its ID.
+29. Rotation preserves the crop and busy operation; rapid actions cannot duplicate Save/Delete or navigation.
+30. Process death discards unsaved edits without automatically retrying an operation.
+31. Failed Save/Delete remains recoverable through an explicit retry with a friendly error.
+32. New photos have a full-width Save button without Cancel or Delete; X cancels without saving. Saved-photo X cancels without changing the stored image.
+33. Saved-photo Delete removes only that Library item, and deleting the last photo restores the empty state.
+
+---
+
+## 19. Focused Verification
+
+Add focused tests for:
+
+- Minimum/maximum zoom, pan clamping, source-to-viewport crop conversion, and
+  combined pan/zoom for landscape, portrait, square, and small images.
+- EXIF rotation/mirroring, initial center-crop composition, and preview/export
+  agreement at viewport edges and maximum zoom. Output stays 1024 × 1024 WebP.
+- Rotation and viewport resizing preserve the selected source region; process
+  death discards unsaved changes without mutating the saved photo.
+- Direct saved-photo entry, new versus saved controls, Cancel/Back/X, and Delete.
+  Underlying Photos and bottom navigation remain blocked during editing.
+- Rapid Save/Delete, conflicting close actions, and recreation during operations
+  result in one operation and one return to Photos.
+- Unchanged saved-photo Save preserves bytes and metadata. Changed Save retains
+  ID/creation time/order, replaces the image, and refreshes thumbnails and re-editing.
+- Encode/write/replace/cleanup failures and process interruption around replacement;
+  reconciliation is repeatable and preserves a complete old or new image.
+- Existing import, deletion/recovery, Library navigation, and game regression tests.
+
+Manually check drag/pinch behavior and crop/output agreement using representative
+images, including small screens, enlarged text, and rotation. Exercise Save,
+re-edit, Cancel, deletion, errors, and restart recovery. Run the debug build,
+unit tests, lint, and relevant device tests; do not add screenshot infrastructure.
 
 ---
 
-## Focused verification
+## Result
 
-Add targeted tests for:
-
-- Center crop coordinates and 1024 x 1024 output for landscape, portrait, square,
-  and smaller input; preview matches saved output.
-- Preservation of the source's displayed orientation, including rotated/mirrored
-  metadata, without manual rotation controls.
-- Invalid/corrupt inputs and sampled decoding of normal high-resolution photos.
-- Repeated Save/Delete taps, mutual exclusion with Cancel, rotation during preview
-  and saving, and exactly one resulting photo/navigation event.
-- Saved-photo Save/X closing without changes, deletion of one/last photo,
-  repeated Delete/Save taps, and database/file failure or interruption during deletion.
-- Picker cancellation, automatic system-picker fallback, explicit modal dismissal,
-  and blocked underlying Photos/bottom controls.
-- Write, rename, metadata, and cleanup failures; interruption before/after rename
-  and database commit; reconciliation is safe to repeat and preserves valid photos.
-- Persistence after restart/process recreation, unsaved-preview discard after
-  process death, empty-to-grid updates, and Home/Library/Back regression coverage.
-
-Manually verify on a small screen and enlarged text, a device with Photo Picker
-and one using the fallback, representative phone photos, low-storage failure,
-and restart recovery. Run the build, unit tests, lint, and focused device tests.
-No large screenshot-test framework is needed.
-
----
-## Result of This Phase
-
-At the end of this feature phase, a parent can perform a complete useful action:
+The parent now controls exactly which part of a personal photo becomes Puzzle Bubbles content:
 
 ```text
-Choose one personal photo
-        ↓
-see exactly what Puzzle Bubbles will use
-        ↓
-save it
-        ↓
-find it permanently in their Photo Library
+choose photo
+     ↓
+center crop appears
+     ↓
+drag + pinch
+     ↓
+preview exactly what will be kept
+     ↓
+Save
+     ↓
+1024 × 1024 library image
 ```
 
-The next photo iteration can extend the preview into an actual editor with pan and zoom while keeping the same import and persistence pipeline.
+This phase also supports re-editing a previously edited photo through the same
+editor. Each edit starts from the currently stored normalized image; no original
+gallery image or edit history is retained.

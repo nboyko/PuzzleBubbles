@@ -6,6 +6,7 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.puzzlebubbles.data.photos.*
+import com.example.puzzlebubbles.domain.PhotoCrop
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.*
@@ -26,6 +27,7 @@ class PhotoRepositoryTest {
 
     private class FailingStore(root: File) : PhotoImageStore(root) {
         var failure: String? = null
+        var failCleanup = false
         override fun write(id: String, bitmap: Bitmap) {
             if (failure == "write") { ensureDirectory(); staging(id).writeText("partial"); throw IOException("disk full") }
             super.write(id, bitmap)
@@ -35,8 +37,12 @@ class PhotoRepositoryTest {
             super.promote(id)
         }
         override fun remove(file: File) {
-            if (failure == "remove") throw IOException("cleanup")
+            if (failure == "remove" || failCleanup) throw IOException("cleanup")
             super.remove(file)
+        }
+        override fun replace(id: String) {
+            if (failure == "replace") throw IOException("replacement")
+            super.replace(id)
         }
     }
     @Before fun setup() = runBlocking {
@@ -124,5 +130,71 @@ class PhotoRepositoryTest {
         repository.refresh()
         assertEquals("original", outside.readText())
         assertTrue(repository.photos.value.isEmpty())
+    }
+    private suspend fun patternedPhoto(): com.example.puzzlebubbles.domain.LibraryPhoto {
+        val source = Bitmap.createBitmap(1024, 1024, Bitmap.Config.ARGB_8888)
+        val canvas = android.graphics.Canvas(source)
+        val paint = android.graphics.Paint().apply { color = Color.RED }
+        canvas.drawRect(0f, 0f, 512f, 1024f, paint)
+        paint.color = Color.GREEN
+        canvas.drawRect(512f, 0f, 1024f, 1024f, paint)
+        return repository.save(store.putDraft(UUID.randomUUID().toString(), source))
+    }
+    @Test fun replacementPreservesMetadataOrderAndPublishesFreshImageRevision() = runBlocking {
+        val photo = patternedPhoto()
+        repository.save(draft())
+        val rows = database.photos().all()
+        val order = repository.photos.value.map { it.id }
+        val before = store.file(photo.id).readBytes()
+        repository.replace(photo.id, PhotoCrop(512f, 0f, 512f))
+        assertEquals(rows, database.photos().all())
+        assertEquals(order, repository.photos.value.map { it.id })
+        assertFalse(before.contentEquals(store.file(photo.id).readBytes()))
+        val updated = repository.photos.value.single { it.id == photo.id }
+        assertEquals(photo.createdAt, updated.createdAt)
+        assertTrue(updated.revision > photo.revision)
+        val image = store.image(photo.assetId, false)!!
+        assertTrue(Color.green(image.getPixel(512, 512)) > 230)
+        image.recycle()
+        repository.refresh()
+        assertEquals(updated, repository.photos.value.single { it.id == photo.id })
+        repository.replace(photo.id, PhotoCrop(0f, 0f, 512f)) // Re-edit the current stored image.
+        assertTrue(repository.photos.value.single { it.id == photo.id }.revision > updated.revision)
+    }
+    @Test fun failedReplacementAndCleanupKeepPreviousBytesAndAllowRetry() = runBlocking {
+        val photo = patternedPhoto()
+        val before = store.file(photo.id).readBytes()
+        val rows = database.photos().all()
+        for (failure in listOf("write", "replace")) {
+            store.failure = failure
+            store.failCleanup = true
+            try { repository.replace(photo.id, PhotoCrop(512f, 0f, 512f)); fail("Expected failure") }
+            catch (_: IOException) { }
+            assertArrayEquals(before, store.file(photo.id).readBytes())
+            assertEquals(rows, database.photos().all())
+            store.failure = null; store.failCleanup = false
+            repeat(2) { repository.refresh() }
+            assertFalse(store.staging(photo.id).exists())
+        }
+        repository.replace(photo.id, PhotoCrop(512f, 0f, 512f))
+        assertTrue(store.valid(photo.id))
+    }
+    @Test fun interruptedReplacementRecoversCompleteOldOrNewImage() = runBlocking {
+        val photo = patternedPhoto()
+        val before = store.file(photo.id).readBytes()
+        val green = Bitmap.createBitmap(1024, 1024, Bitmap.Config.ARGB_8888).apply { eraseColor(Color.GREEN) }
+        store.write(photo.id, green) // Interruption before the swap.
+        repository = LocalPhotoRepository(database, store)
+        repeat(2) { repository.refresh() }
+        assertArrayEquals(before, store.file(photo.id).readBytes())
+        assertFalse(store.staging(photo.id).exists())
+        store.write(photo.id, green); store.replace(photo.id) // Interruption immediately after the swap.
+        val committed = store.file(photo.id).readBytes()
+        repository = LocalPhotoRepository(database, store)
+        repeat(2) { repository.refresh() }
+        assertArrayEquals(committed, store.file(photo.id).readBytes())
+        assertEquals(listOf(photo.id), repository.photos.value.map { it.id })
+        assertTrue(store.valid(photo.id))
+        green.recycle()
     }
 }

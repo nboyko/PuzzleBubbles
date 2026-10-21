@@ -3,6 +3,7 @@ package com.example.puzzlebubbles.data.photos
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Build
+import android.system.Os
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -35,12 +36,17 @@ open class PhotoImageStore(val directory: File) {
     open fun promote(id: String) {
         if (!staging(id).renameTo(file(id))) throw IOException("Image rename failed")
     }
+    /** Same-directory atomic rename: the previous complete file remains until the swap. */
+    open fun replace(id: String) {
+        if (!validFile(staging(id))) throw IOException("Invalid replacement image")
+        Os.rename(staging(id).path, file(id).path)
+    }
     open fun remove(file: File) {
         require(file.parentFile?.canonicalFile == directory.canonicalFile)
         if (file.exists() && !file.delete()) throw IOException("Image cleanup failed")
     }
-    fun valid(id: String): Boolean {
-        val input = file(id)
+    fun valid(id: String): Boolean = validFile(file(id))
+    private fun validFile(input: File): Boolean {
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeFile(input.path, bounds)
         if (bounds.outWidth != 1024 || bounds.outHeight != 1024 || bounds.outMimeType != "image/webp") return false

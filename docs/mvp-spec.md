@@ -124,10 +124,22 @@ center-cropped 1024 × 1024 WebP in private app storage, with generated stable I
 and Room metadata. Unsaved photos have Save/Cancel; tapping a saved photo opens
 Delete/Save and a top-right X to close. Delete removes only the app-owned saved
 photo, never the gallery original. Save on a saved photo currently closes without
-changes; saving edits belongs to the future editor. Manual editing, Library
-audio, and custom-photo gameplay remain outside
-this phase. See [the plan](plan.md) for lifecycle, failure recovery, and
-acceptance requirements; this paragraph defines scope, not implementation status.
+changes in the initial Add Photo phase. Library audio and custom-photo gameplay
+remain outside that phase.
+
+The agreed Crop Editor phase replaces this preview with a shared modal editor
+over Photos, with a rounded panel and dimmed background rather than a separate
+page. It supports new and saved photos: a fixed square viewport, constrained pan/pinch zoom up to 4×,
+and 1024 × 1024 WebP output. Tapping a saved photo opens the editor directly,
+with Delete/Save below and X at the top right to cancel. New photos use
+a full-width Save button with a top-right X and have no Cancel, Delete, or header Back arrow. The editor
+has no visible title. Back or tapping the dimmed backdrop cancels editing;
+all conflicting actions are blocked during Save/Delete. Unchanged saved photos
+close without rewriting. Changed photos retain their ID, creation time, and
+order; safe replacement and recovery preserve a valid image after interruption.
+Re-editing uses the currently stored image, without retaining originals.
+See [the plan](plan.md) for lifecycle, failure recovery, and acceptance requirements;
+these paragraphs define scope, not implementation status.
 
 The home/navigation step alone does not fulfill the playable MVP definition of
 done in section 16. Acceptance is evaluated against the selected iteration step;
