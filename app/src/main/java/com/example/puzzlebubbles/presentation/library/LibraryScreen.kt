@@ -1,5 +1,7 @@
 package com.example.puzzlebubbles.presentation.library
 
+import androidx.compose.ui.tooling.preview.Preview
+import com.example.puzzlebubbles.ui.theme.PuzzleBubblesTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -138,5 +140,14 @@ private fun LibrarySectionCard(title: String, iconAssetId: String, accent: Color
                 colorFilter = ColorFilter.tint(accent),
             )
         }
+    }
+}
+
+@Preview(name = "My Library", widthDp = 360, heightDp = 800)
+@Preview(name = "My Library - landscape", widthDp = 800, heightDp = 360)
+@Composable
+private fun LibraryScreenPreview() {
+    PuzzleBubblesTheme {
+        LibraryScreen({}, {}, {}, Modifier.fillMaxSize())
     }
 }

@@ -1,5 +1,10 @@
 package com.example.puzzlebubbles.presentation.games.chooseit
 
+import androidx.compose.ui.tooling.preview.Preview
+import com.example.puzzlebubbles.ui.theme.PuzzleBubblesTheme
+import androidx.compose.ui.platform.LocalInspectionMode
+import com.example.puzzlebubbles.domain.ChooseItSessionFactory
+import com.example.puzzlebubbles.data.LocalGameRepository
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
@@ -81,8 +86,9 @@ fun ChooseItGameScreen(
     onGameComplete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val inspection = LocalInspectionMode.current
     LaunchedEffect(uiState.audioRequestId) {
-        if (uiState.phase != ChooseItPhase.GAME_COMPLETE) {
+        if (!inspection && uiState.phase != ChooseItPhase.GAME_COMPLETE) {
             audioPlayer.play(uiState.round.audioAssetId)
         }
     }
@@ -194,22 +200,24 @@ private fun ChoiceBubble(
     onSuccessSound: suspend () -> Unit,
     onCorrectFinished: () -> Unit,
 ) {
+    val inspection = LocalInspectionMode.current
     val shake = remember(roundId) { Animatable(0f) }
-    val decorations = remember(roundId) { Animatable(0f) }
-    val successScale = remember(roundId) { Animatable(1f) }
-    val successTranslation = remember(roundId) { Animatable(0f) }
+    val decorations = remember(roundId) { Animatable(if (inspection && isWrong) 1f else 0f) }
+    val successScale = remember(roundId) { Animatable(if (inspection && isCorrect) maxSuccessScale else 1f) }
+    val successTranslation = remember(roundId) { Animatable(if (inspection && isCorrect) centerTranslation else 0f) }
     val successAlpha = remember(roundId) { Animatable(1f) }
-    val entranceScale = remember(roundId) { Animatable(.86f) }
-    val entranceAlpha = remember(roundId) { Animatable(0f) }
+    val entranceScale = remember(roundId) { Animatable(if (inspection) 1f else .86f) }
+    val entranceAlpha = remember(roundId) { Animatable(if (inspection) 1f else 0f) }
 
     LaunchedEffect(roundId) {
+        if (inspection) return@LaunchedEffect
         coroutineScope {
             launch { entranceScale.animateTo(1f, tween(240, easing = FastOutSlowInEasing)) }
             launch { entranceAlpha.animateTo(1f, tween(220)) }
         }
     }
     LaunchedEffect(isWrong) {
-        if (isWrong) {
+        if (isWrong && !inspection) {
             coroutineScope {
                 launch {
                     decorations.snapTo(1f)
@@ -225,7 +233,7 @@ private fun ChoiceBubble(
         }
     }
     LaunchedEffect(isCorrect) {
-        if (isCorrect) {
+        if (isCorrect && !inspection) {
             // Start together and keep the bubble visible until both sound and growth finish.
             coroutineScope {
                 launch { onSuccessSound() }
@@ -351,7 +359,9 @@ private fun ReplayBubble(enabled: Boolean, onClick: () -> Unit, modifier: Modifi
 
 @Composable
 private fun GameCompleteScreen(audioPlayer: AudioPlayer, onFinished: () -> Unit) {
+    val inspection = LocalInspectionMode.current
     LaunchedEffect(audioPlayer) {
+        if (inspection) return@LaunchedEffect
         coroutineScope {
             launch { audioPlayer.playToEnd("sfx-game-complete") }
             delay(3_000)
@@ -413,3 +423,46 @@ private fun GameBubbleBackdrop(modifier: Modifier = Modifier) {
         }
     }
 }
+
+@Composable
+private fun ChooseItPreviewContent(phase: ChooseItPhase) {
+    val round = remember {
+        ChooseItSessionFactory(kotlin.random.Random(0))
+            .create(LocalGameRepository().getChooseItGame("choose-it")).rounds.first()
+    }
+    val silentAudio = remember {
+        object : AudioPlayer {
+            override fun play(assetId: String) = Unit
+            override suspend fun playToEnd(assetId: String) = Unit
+            override fun stop() = Unit
+            override fun release() = Unit
+        }
+    }
+    val feedback = when (phase) {
+        ChooseItPhase.CORRECT_FEEDBACK -> round.correctChoiceId
+        ChooseItPhase.WRONG_FEEDBACK -> round.choices.first { it.id != round.correctChoiceId }.id
+        else -> null
+    }
+    PuzzleBubblesTheme {
+        ChooseItGameScreen("What's That?", ChooseItUiState(round, 1, 10, phase, feedback, 0),
+            silentAudio, {}, {}, {}, {}, {}, Modifier.fillMaxSize())
+    }
+}
+
+@Preview(name = "What's That - round", widthDp = 360, heightDp = 800)
+@Preview(name = "What's That - landscape", widthDp = 800, heightDp = 360)
+@Composable
+private fun ChooseItRoundPreview() = ChooseItPreviewContent(ChooseItPhase.WAITING_FOR_ANSWER)
+
+@Preview(name = "What's That - wrong feedback", widthDp = 360, heightDp = 800)
+@Composable
+private fun ChooseItWrongPreview() = ChooseItPreviewContent(ChooseItPhase.WRONG_FEEDBACK)
+
+@Preview(name = "What's That - correct feedback", widthDp = 360, heightDp = 800)
+@Composable
+private fun ChooseItCorrectPreview() = ChooseItPreviewContent(ChooseItPhase.CORRECT_FEEDBACK)
+
+@Preview(name = "Game complete", widthDp = 360, heightDp = 800)
+@Preview(name = "Game complete - landscape", widthDp = 800, heightDp = 360)
+@Composable
+private fun GameCompletePreview() = ChooseItPreviewContent(ChooseItPhase.GAME_COMPLETE)

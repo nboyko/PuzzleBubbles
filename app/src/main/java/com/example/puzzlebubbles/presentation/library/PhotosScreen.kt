@@ -1,5 +1,8 @@
 package com.example.puzzlebubbles.presentation.library
 
+import androidx.compose.ui.tooling.preview.Preview
+import com.example.puzzlebubbles.ui.theme.PuzzleBubblesTheme
+import com.example.puzzlebubbles.domain.LibraryPhoto
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.pointerInput
@@ -57,21 +60,42 @@ fun PhotosScreen(model: PhotosViewModel, onBack: () -> Unit, onHome: () -> Unit,
         } catch (_: Exception) { model.pickerFailed() }
     }
     val canAddPhoto = !model.busy && !model.picking && model.modal == null && model.error != PhotoError.LOAD
+    PhotosContent(
+        photos = model.photos, modal = model.modal, loading = model.loading, busy = model.busy,
+        error = model.error, focusId = model.focusId, canAddPhoto = canAddPhoto,
+        addPhoto = addPhoto, onFocused = model::focused, onReload = model::reload,
+        onOpen = model::open, onSave = model::save, onDelete = model::delete,
+        onClose = model::close, onTransform = model::transform,
+        onBack = onBack, onHome = onHome, modifier = modifier,
+    )
+}
+
+@Composable
+private fun PhotosContent(
+    photos: List<LibraryPhoto> = emptyList(),
+    modal: PhotoModal? = null, loading: Boolean = false, busy: Boolean = false,
+    error: PhotoError? = null, focusId: String? = null, canAddPhoto: Boolean = true,
+    addPhoto: () -> Unit = {}, onFocused: () -> Unit = {}, onReload: () -> Unit = {},
+    onOpen: (LibraryPhoto) -> Unit = {},
+    onSave: () -> Unit = {}, onDelete: () -> Unit = {}, onClose: () -> Unit = {},
+    onTransform: (Float, Float, Float, Float, Float, Float) -> Unit = { _, _, _, _, _, _ -> },
+    onBack: () -> Unit = {}, onHome: () -> Unit = {}, modifier: Modifier = Modifier,
+) {
     val grid = rememberLazyGridState()
-    LaunchedEffect(model.focusId, model.photos) {
-        if (model.focusId != null && model.photos.any { it.id == model.focusId }) {
+    LaunchedEffect(focusId, photos) {
+        if (focusId != null && photos.any { it.id == focusId }) {
             grid.scrollToItem(0)
-            model.focused()
+            onFocused()
         }
     }
     Box(modifier) {
-        Column(Modifier.fillMaxSize().then(if (model.modal != null) Modifier.clearAndSetSemantics {} else Modifier)
+        Column(Modifier.fillMaxSize().then(if (modal != null) Modifier.clearAndSetSemantics {} else Modifier)
             .background(PhotoBackground).windowInsetsPadding(
             WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
         )) {
             Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    BubbleButton(onClick = { if (model.modal == null) onBack() }, iconAssetId = "ui-back",
+                    BubbleButton(onClick = { if (modal == null) onBack() }, iconAssetId = "ui-back",
                         accessibilityLabel = stringResource(R.string.back), colors = listOf(PhotoInk), showBorder = false)
                     Text(stringResource(R.string.photos), Modifier.weight(1f).semantics { heading() },
                         fontFamily = HomeHeadingFontFamily, fontWeight = FontWeight.Bold, fontSize = 32.sp, color = PhotoInk)
@@ -85,12 +109,12 @@ fun PhotosScreen(model: PhotosViewModel, onBack: () -> Unit, onHome: () -> Unit,
             }
             Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
                 when {
-                    model.loading -> CircularProgressIndicator()
-                    model.error == PhotoError.LOAD -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        PhotoErrorText(model.error)
-                        BubbleButton(onClick = model::reload, text = stringResource(R.string.retry))
+                    loading -> CircularProgressIndicator()
+                    error == PhotoError.LOAD -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        PhotoErrorText(error)
+                        BubbleButton(onClick = onReload, text = stringResource(R.string.retry))
                     }
-                    model.photos.isEmpty() -> Column(
+                    photos.isEmpty() -> Column(
                         Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(24.dp),
                     ) {
@@ -103,8 +127,8 @@ fun PhotosScreen(model: PhotosViewModel, onBack: () -> Unit, onHome: () -> Unit,
                         contentPadding = PaddingValues(16.dp), horizontalArrangement = Arrangement.spacedBy(16.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
-                        itemsIndexed(model.photos, key = { _, photo -> photo.id }) { index, photo ->
-                            Card(onClick = { model.open(photo) }, colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                        itemsIndexed(photos, key = { _, photo -> photo.id }) { index, photo ->
+                            Card(onClick = { onOpen(photo) }, colors = CardDefaults.cardColors(containerColor = Color.White)) {
                                 PhotoAssetImage(photo.assetId, Modifier.fillMaxWidth().aspectRatio(1f).padding(8.dp),
                                     thumbnail = true, description = stringResource(R.string.library_photo, index + 1),
                                     revision = photo.revision)
@@ -112,14 +136,14 @@ fun PhotosScreen(model: PhotosViewModel, onBack: () -> Unit, onHome: () -> Unit,
                         }
                     }
                 }
-                if (model.busy && !model.loading && model.modal == null) CircularProgressIndicator()
+                if (busy && !loading && modal == null) CircularProgressIndicator()
             }
-            if (model.modal == null && model.error == PhotoError.IMPORT) PhotoErrorText(model.error)
-            HomeNavigationBar(true, { if (model.modal == null) onHome() }, { if (model.modal == null) onBack() },
-                modifier = Modifier.alpha(if (model.modal == null) 1f else 0f))
+            if (modal == null && error == PhotoError.IMPORT) PhotoErrorText(error)
+            HomeNavigationBar(true, { if (modal == null) onHome() }, { if (modal == null) onBack() },
+                modifier = Modifier.alpha(if (modal == null) 1f else 0f))
         }
-        model.modal?.let { modal -> PhotoModalContent(modal, model.busy, model.error,
-            model::save, model::delete, model::close, model::transform) }
+        modal?.let { modal -> PhotoModalContent(modal, busy, error,
+            onSave, onDelete, onClose, onTransform) }
     }
 }
 
@@ -179,4 +203,66 @@ private fun PhotoErrorText(error: PhotoError?) {
         null -> return
     }
     Text(stringResource(message), Modifier.padding(12.dp), color = PhotoInk, textAlign = TextAlign.Center)
+}
+
+@Preview(name = "Photos - empty", widthDp = 360, heightDp = 800)
+@Composable
+private fun PhotosEmptyPreview() {
+    PuzzleBubblesTheme { PhotosContent(modifier = Modifier.fillMaxSize()) }
+}
+
+@Preview(name = "Photos - saved grid", widthDp = 360, heightDp = 800)
+@Composable
+private fun PhotosGridPreview() {
+    PuzzleBubblesTheme {
+        PhotosContent(photos = listOf(
+            LibraryPhoto("cat-image", 2),
+            LibraryPhoto("dog-image", 1),
+        ), modifier = Modifier.fillMaxSize())
+    }
+}
+
+@Preview(name = "Photos - loading", widthDp = 360, heightDp = 800)
+@Composable
+private fun PhotosLoadingPreview() {
+    PuzzleBubblesTheme {
+        PhotosContent(loading = true, busy = true, canAddPhoto = false, modifier = Modifier.fillMaxSize())
+    }
+}
+
+@Preview(name = "Photos - load error", widthDp = 360, heightDp = 800)
+@Composable
+private fun PhotosErrorPreview() {
+    PuzzleBubblesTheme {
+        PhotosContent(error = PhotoError.LOAD, canAddPhoto = false, modifier = Modifier.fillMaxSize())
+    }
+}
+
+@Preview(name = "New photo modal", widthDp = 360, heightDp = 800)
+@Preview(name = "New photo - landscape", widthDp = 800, heightDp = 360)
+@Preview(name = "New photo - large text", widthDp = 320, heightDp = 640, fontScale = 1.5f)
+@Composable
+private fun NewPhotoPreview() {
+    PuzzleBubblesTheme {
+        PhotosContent(modal = PhotoModal(PhotoSource("photo-draft:cat-image", 512, 512)),
+            canAddPhoto = false, modifier = Modifier.fillMaxSize())
+    }
+}
+
+@Preview(name = "Saved photo - save error", widthDp = 360, heightDp = 800)
+@Composable
+private fun SavedPhotoPreview() {
+    PuzzleBubblesTheme {
+        PhotosContent(modal = PhotoModal(PhotoSource("library-photo:dog-image", 512, 512), savedId = "dog-image"),
+            error = PhotoError.SAVE, canAddPhoto = false, modifier = Modifier.fillMaxSize())
+    }
+}
+
+@Preview(name = "Photo - saving", widthDp = 360, heightDp = 800)
+@Composable
+private fun SavingPhotoPreview() {
+    PuzzleBubblesTheme {
+        PhotosContent(modal = PhotoModal(PhotoSource("photo-draft:cat-image", 512, 512)),
+            busy = true, canAddPhoto = false, modifier = Modifier.fillMaxSize())
+    }
 }

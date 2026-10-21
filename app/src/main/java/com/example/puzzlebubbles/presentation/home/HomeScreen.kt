@@ -298,6 +298,7 @@ private fun DrawScope.drawBubble(center: Offset, radius: Float, alpha: Float = 1
 
 @Preview(showBackground = true, widthDp = 360, heightDp = 800)
 @Preview(showBackground = true, widthDp = 800, heightDp = 600)
+@Preview(name = "Home - large text", showBackground = true, widthDp = 320, heightDp = 640, fontScale = 1.5f)
 @Composable
 private fun HomeScreenPreview() {
     PuzzleBubblesTheme {

@@ -1,10 +1,13 @@
 package com.example.puzzlebubbles.presentation.library
 
+import androidx.compose.ui.tooling.preview.Preview
+import com.example.puzzlebubbles.ui.theme.PuzzleBubblesTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.WindowInsets
@@ -96,5 +99,13 @@ private fun EmptyLibraryScreen(
             onGamesSelected = onHome,
             onLibrarySelected = onBack,
         )
+    }
+}
+
+@Preview(name = "Sounds - empty", widthDp = 360, heightDp = 800)
+@Composable
+private fun SoundsScreenPreview() {
+    PuzzleBubblesTheme {
+        SoundsScreen({}, {}, Modifier.fillMaxSize())
     }
 }

@@ -1,6 +1,17 @@
 package com.example.puzzlebubbles.presentation.components
 
+import com.example.puzzlebubbles.data.LocalImageAssetResolver
+import android.graphics.BitmapFactory
+import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import android.graphics.Bitmap
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.tooling.preview.Preview
+import com.example.puzzlebubbles.ui.theme.PuzzleBubblesTheme
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -26,8 +37,28 @@ fun PhotoAssetImage(assetId: String, modifier: Modifier, thumbnail: Boolean, des
     else Box(modifier.background(Color(0xFFE7EFF8)))
 }
 
+@Preview(name = "Photo thumbnails", showBackground = true)
+@Composable
+private fun PhotoAssetImagePreview() {
+    PuzzleBubblesTheme {
+        Row {
+            PhotoAssetImage("library-photo:cat-image", Modifier.size(128.dp), thumbnail = true)
+            PhotoAssetImage("library-photo:dog-image", Modifier.size(128.dp), thumbnail = true)
+        }
+    }
+}
+
 @Composable
 internal fun photoBitmap(assetId: String, thumbnail: Boolean, revision: Long = 0): androidx.compose.runtime.State<Bitmap?> {
+    if (LocalInspectionMode.current) {
+        val resources = LocalContext.current.resources
+        // Bundled examples only in Layoutlib; never open private files from a preview.
+        return remember(assetId) {
+            val sample = if (assetId.endsWith("dog-image")) "dog-image" else "cat-image"
+            mutableStateOf(BitmapFactory.decodeResource(
+                resources, LocalImageAssetResolver.resolveImage(sample)))
+        }
+    }
     val images = LocalPhotoImages.current
     return produceState<Bitmap?>(null, images, assetId, thumbnail, revision) {
         value = withContext(Dispatchers.IO) { images.image(assetId, thumbnail) }

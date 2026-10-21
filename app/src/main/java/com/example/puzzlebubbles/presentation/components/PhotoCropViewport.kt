@@ -23,6 +23,9 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.tooling.preview.Preview
+import com.example.puzzlebubbles.ui.theme.PuzzleBubblesTheme
 import com.example.puzzlebubbles.domain.PhotoCrop
 
 /** Bitmap access stays at the rendering boundary; drawing and export use the same source region. */
@@ -63,5 +66,15 @@ fun PhotoCropViewport(
             drawRect(Color.White.copy(alpha = .9f), Offset(left, top), Size(side, side), style = Stroke(2.dp.toPx()))
         }
         if (bitmap == null) CircularProgressIndicator()
+    }
+}
+
+@Preview(name = "Crop viewport - zoomed", showBackground = true)
+@Composable
+private fun PhotoCropViewportPreview() {
+    PuzzleBubblesTheme {
+        PhotoCropViewport("photo-draft:cat-image", PhotoCrop(128f, 128f, 256f), enabled = true,
+            description = "Photo crop", onTransform = { _, _, _, _, _, _ -> },
+            modifier = Modifier.size(320.dp, 440.dp))
     }
 }

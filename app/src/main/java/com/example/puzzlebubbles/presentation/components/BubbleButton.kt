@@ -1,5 +1,7 @@
 package com.example.puzzlebubbles.presentation.components
 
+import com.example.puzzlebubbles.ui.theme.PuzzleBubblesTheme
+import androidx.compose.foundation.layout.Column
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
@@ -137,13 +139,18 @@ fun BubbleButton(
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFFF2EEFF)
+@Preview(name = "Button variants", showBackground = true, backgroundColor = 0xFFF2EEFF, widthDp = 360)
 @Composable
 private fun BubbleButtonPreview() {
-    Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        BubbleButton(onClick = {}, iconAssetId = "ui-back", accessibilityLabel = "Back", showBorder = false)
-        BubbleButton(onClick = {}, iconAssetId = "ui-sound", accessibilityLabel = "Replay", neon = true)
-        BubbleButton(onClick = {}, text = "Play", colors = listOf(Color(0xFF0879C7)))
-        BubbleButton(onClick = {}, text = "Next", iconAssetId = "ui-back", colors = BubbleButtonMulticolorColors, neon = true)
+    PuzzleBubblesTheme {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                BubbleButton(onClick = {}, iconAssetId = "ui-back", accessibilityLabel = "Back", showBorder = false)
+                BubbleButton(onClick = {}, iconAssetId = "ui-sound", accessibilityLabel = "Replay", neon = true)
+            }
+            BubbleButton(onClick = {}, text = "Play", colors = listOf(Color(0xFF0879C7)))
+            BubbleButton(onClick = {}, text = "Next", iconAssetId = "ui-back", colors = BubbleButtonMulticolorColors, neon = true)
+            BubbleButton(onClick = {}, text = "Save", enabled = false)
+        }
     }
 }

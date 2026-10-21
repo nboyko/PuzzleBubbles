@@ -1,5 +1,7 @@
 package com.example.puzzlebubbles.presentation.home
 
+import androidx.compose.ui.tooling.preview.Preview
+import com.example.puzzlebubbles.ui.theme.PuzzleBubblesTheme
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -149,5 +151,16 @@ private fun SelectedNavigationBubble(modifier: Modifier, accent: Color) {
             Brush.linearGradient(listOf(Color(0xFF88DCEB), Color.White, Color(0xFFD5B1F2), Color(0xFF86D4EA))),
             radius, style = Stroke(2.dp.toPx()),
         )
+    }
+}
+
+@Preview(name = "Navigation - both selections", widthDp = 360, showBackground = true, backgroundColor = 0xFFEAF8FF)
+@Composable
+private fun HomeNavigationBarPreview() {
+    PuzzleBubblesTheme {
+        Column {
+            HomeNavigationBar(false, {}, {})
+            HomeNavigationBar(true, {}, {})
+        }
     }
 }
