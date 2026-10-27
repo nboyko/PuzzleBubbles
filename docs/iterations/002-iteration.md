@@ -1,6 +1,6 @@
 # Iteration 2: Library functionality
 
-Status: **In progress**. Phases 1–4 are verified; the full iteration is not finished
+Status: **In progress**. Phases 1–5 are verified; the full iteration is not finished
 until the user explicitly confirms it.
 
 ## Verified phases
@@ -86,6 +86,20 @@ Emulator input and rendered screenshots confirmed correct/incorrect swipes,
 retry, round progression, Replay, and Back. Existing round/feedback previews
 compiled; they were not rendered in the IDE. Physical-phone verification of this
 gesture change remains unverified because the connected phone was locked.
+
+### Phase 5: feat Sounds empty-state recording action
+
+Empty Sounds replaces its message with an Add Record button below the sound
+icon, following Photos. The header plus remains; both open the same idle modal
+without requesting permission or recording. They share existing action guards.
+The extra button disappears with saved content and returns after the last
+deletion. The icon shrinks in limited vertical space to keep the button visible.
+
+Verified: debug build, 14 unit tests, 33 initial Sounds/Photos/navigation emulator
+tests, and all 16 Sounds tests after the landscape fix. Lint has zero errors and
+18 warnings. Portrait/landscape screens were rendered and inspected on the emulator,
+and Add Record opened the idle modal. Existing previews compiled; IDE rendering
+and physical-device verification of this change remain unverified.
 
 ## Remaining work
 

@@ -143,7 +143,11 @@ These paragraphs define requirements, not implementation status.
 The agreed **Record and Manage Library Sounds** feature is another phase of
 Iteration 2. Sounds retains the fixed Home/Library navigation, with Library
 selected; its recording modal covers and blocks the screen and navigation.
-The header plus opens the modal without requesting microphone access. Request
+The header plus opens the modal without requesting microphone access. When Sounds
+is empty, show the sound icon with a duplicate **Add Record** button beneath it,
+following the Photos empty-state pattern, instead of a "No sounds yet" message.
+Both entry points use the same modal and action guards; the extra button is hidden
+when saved recordings exist. Request
 `RECORD_AUDIO` only on Record. Handle denial and offer app settings when needed,
 without starting automatically on return.
 

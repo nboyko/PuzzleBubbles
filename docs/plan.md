@@ -1,38 +1,37 @@
-# Plan 005 — Forgiving image selection
+# Plan 006 — Sounds empty-state recording action
 
-Status: **Verified and finalized** as Phase 4 of the still-open Iteration 2.
-Iteration 1 remains closed. The acceptance criteria below describe the completed
-improvement; no next feature has been agreed.
+Status: **Verified and finalized** as Phase 5 of the still-open Iteration 2.
+No next feature has been agreed.
 
 ## Goal
 
-Let young children select a What's That? image with either a tap or an imprecise
-swipe, reusing existing answers, feedback, animation, and round transitions.
+Replace the empty Sounds page's "No sounds yet" message with an **Add Record**
+button beneath the sound icon, following the Photos empty-state pattern.
 
 ## Acceptance criteria
 
-1. A normal tap and accessible click still select an image exactly once.
-2. A swipe starting on either image bubble, in any direction, selects that image
-   once it crosses the normal touch threshold, even when it leaves the bubble.
-3. A swipe crossing the other image submits only the starting image's answer.
-4. Correct and incorrect swipes use existing feedback and retry/advance behavior.
-5. Input during feedback and a finger held into the next round cannot submit
-   another answer. Cancellation before the movement threshold selects nothing.
-6. Back, Replay, game audio, and layout remain usable. Existing screen previews
-   compile; inspect the gesture and feedback on a device when available.
-7. Add focused Compose gesture tests and run build, unit tests, lint, affected
-   device tests, and game/navigation regressions using existing tooling.
+1. With no saved sounds, show the existing sound icon above Add Record.
+2. Keep the header plus action with its accessible Add Sound label.
+3. Both actions open the existing idle recording modal. Opening it neither
+   requests microphone permission nor starts recording; Record retains that role.
+4. Share existing loading, cleanup, error, busy, and modal guards between both
+   entry points. Background actions remain blocked while a modal is open.
+5. Hide the extra button when saved sounds exist; restore it after deleting the
+   last recording. Keep existing recording, list, and navigation behavior.
+6. Compile existing previews, inspect portrait/landscape empty states on an available device,
+   and run build, unit tests, lint, and affected Sounds/Photos/navigation tests.
 
-No change to Matching, correctness data, scoring, or other controls is required.
+No new recording route, asset, persistence behavior, or content model is needed.
 
 ## Verified outcome
 
-Taps, accessible clicks, and swipes select the starting image once through the
-existing answer logic. Incorrect feedback permits retry; correct feedback advances
-normally. Crossing another image, input during feedback, held gestures across
-rounds, and cancellation below the threshold are covered by gesture tests.
+Add Record replaces the empty-state message beneath the sound icon. It shares
+the header plus action and guards, opens the same idle modal, disappears with
+saved sounds, and returns after the last deletion. The icon can shrink to keep
+the button visible in landscape.
 
-Debug build, 14 unit tests, and 21 affected emulator tests passed; lint reports
-zero errors and 18 warnings. Existing Compose previews compiled. Rendered emulator
-checks covered correct/incorrect swipes, retry, progression, Replay, and Back;
-physical-phone gesture verification and IDE preview rendering remain unverified.
+Debug build, 14 unit tests, 33 initial affected emulator tests, and all 16 Sounds
+tests after the landscape fix passed. Lint reports zero errors and 18 warnings.
+Portrait/landscape emulator screens were rendered and inspected, including opening
+the modal from Add Record. Existing previews compiled; physical-device verification
+of this change and IDE preview rendering remain unverified.

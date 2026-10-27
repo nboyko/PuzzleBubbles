@@ -126,6 +126,7 @@ private fun SoundsContent(
     onSettings: () -> Unit = {}, modifier: Modifier = Modifier,
 ) {
     val covered = state.modal != null || state.deleteId != null
+    val canAdd = !covered && !state.blocked && state.error !in listOf(SoundError.LOAD, SoundError.CLEANUP)
     BackHandler(enabled = covered || state.committing || state.cleaning) {
         if (!state.committing) {
             if (state.deleteId != null) onDeleteCancel() else onClose()
@@ -141,7 +142,7 @@ private fun SoundsContent(
                 Text(stringResource(R.string.sounds), Modifier.weight(1f).semantics { heading() },
                     color = SoundInk, fontFamily = HomeHeadingFontFamily, fontSize = 32.sp, fontWeight = FontWeight.Bold)
                 BubbleButton(onClick = onAdd, iconAssetId = "ui-plus", accessibilityLabel = stringResource(R.string.add_sound),
-                    colors = listOf(SoundAccent), enabled = !covered && !state.blocked && state.error !in listOf(SoundError.LOAD, SoundError.CLEANUP))
+                    colors = listOf(SoundAccent), enabled = canAdd)
             }
             Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
                 when {
@@ -152,9 +153,9 @@ private fun SoundsContent(
                     }
                     state.sounds.isEmpty() -> Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(24.dp)) {
-                        AssetImage("ui-sound", Modifier.size(112.dp), colorFilter = ColorFilter.tint(SoundAccent))
-                        Text(stringResource(R.string.no_sounds_yet), fontFamily = HomeHeadingFontFamily, fontSize = 26.sp,
-                            color = Color(0xFF5B77A0), textAlign = TextAlign.Center)
+                        AssetImage("ui-sound", Modifier.size(112.dp).weight(1f, fill = false), colorFilter = ColorFilter.tint(SoundAccent))
+                        BubbleButton(onClick = onAdd, text = stringResource(R.string.add_record),
+                            colors = listOf(SoundAccent), enabled = canAdd)
                     }
                     else -> LazyColumn(Modifier.fillMaxSize().testTag("sounds-list"), contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)) {

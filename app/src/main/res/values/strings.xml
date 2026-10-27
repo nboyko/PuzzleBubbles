@@ -13,7 +13,6 @@
     <string name="photos">Photos</string>
     <string name="sounds">Sounds</string>
     <string name="no_photos_yet">No photos yet</string>
-    <string name="no_sounds_yet">No sounds yet</string>
     <string name="home_question">What would you like to play?</string>
     <string name="home_hint">Pick a game to begin!</string>
     <string name="add_photo">Add Photo</string>
@@ -30,6 +29,7 @@
     <string name="photo_save_error">Couldn\'t save this photo. Check available storage and try again.</string>
     <string name="photo_delete_error">Couldn\'t finish deleting this photo. Please try again.</string>
     <string name="add_sound">Add Sound</string>
+    <string name="add_record">Add Record</string>
     <string name="record_sound">Record Sound</string>
     <string name="record">Record</string>
     <string name="stop_recording">Stop</string>

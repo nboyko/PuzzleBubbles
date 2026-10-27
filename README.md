@@ -24,6 +24,8 @@ This overview describes the current checkout, not iteration acceptance.
 - Sounds records microphone audio in a modal, stopping automatically after five
   seconds or when Stop is pressed. Native AAC output may have up to 100 ms of
   overhead; files longer than 5,100 ms are rejected and actual duration is retained.
+  Empty Sounds shows an Add Record button beneath its sound icon, alongside the
+  header plus action. Both open the same recording modal.
   Preview supports Play/Pause, Cancel, and
   explicit Save. Preview has a selected `Track N` name default that can be replaced;
   duplicate names are allowed. Saved rows show names, playback progress, and confirmed Delete.

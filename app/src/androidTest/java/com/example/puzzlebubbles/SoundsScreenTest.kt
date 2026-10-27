@@ -1,5 +1,7 @@
 package com.example.puzzlebubbles
 
+import android.content.pm.ActivityInfo
+import android.content.res.Configuration
 import androidx.activity.compose.setContent
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -98,6 +100,39 @@ class SoundsScreenTest {
         compose.waitUntil { model.uiState.modal == null && !model.uiState.cleaning }
     }
 
+    @Test fun emptyAddRecordAndHeaderPlusOpenTheSameIdleModalWithoutRecording() {
+        compose.onNodeWithContentDescription("Add Sound").assertIsDisplayed().assertIsEnabled()
+        compose.onNodeWithText("Add Record").assertIsDisplayed().assertIsEnabled().performClick()
+        compose.onNodeWithTag("sound-modal").assertIsDisplayed()
+        compose.onNodeWithText("Record").assertIsEnabled()
+        assertEquals(RecordingStep.IDLE, model.uiState.modal!!.step)
+        assertFalse(model.uiState.permissionPending)
+        assertEquals(0, recorder.starts)
+        compose.onNodeWithText("Add Record").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Add Sound").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Close").performClick()
+        compose.waitUntil { !model.uiState.cleaning }
+        compose.onNodeWithText("Add Record").assertIsDisplayed().assertIsEnabled()
+        open()
+        assertEquals(RecordingStep.IDLE, model.uiState.modal!!.step)
+        assertFalse(model.uiState.permissionPending)
+        assertEquals(0, recorder.starts)
+    }
+    @Test fun emptyAddRecordRemainsVisibleAndOpensTheModalInLandscape() {
+        compose.activityRule.scenario.onActivity { it.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE }
+        try {
+            compose.waitUntil(timeoutMillis = 5000) {
+                compose.activity.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+            }
+            compose.activityRule.scenario.onActivity(::show)
+            compose.onNodeWithText("Add Record").assertIsDisplayed().assertIsEnabled().performClick()
+            compose.onNodeWithTag("sound-modal").assertIsDisplayed()
+            assertEquals(RecordingStep.IDLE, model.uiState.modal!!.step)
+            assertEquals(0, recorder.starts)
+        } finally {
+            compose.activityRule.scenario.onActivity { it.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED }
+        }
+    }
     @Test fun openingDoesNotRequestMicrophoneAndStalePermissionCannotStartRecording() {
         open()
         assertEquals(0, recorder.starts)
@@ -282,6 +317,7 @@ class SoundsScreenTest {
     }
     @Test fun deleteConfirmationAndRapidDeleteRemoveOneItemAndRestoreEmptyState() {
         saved()
+        compose.onNodeWithText("Add Record").assertDoesNotExist()
         compose.onNodeWithContentDescription("Play recording 1").performClick()
         compose.onNodeWithContentDescription("Delete recording 1").performClick()
         assertFalse(player.playback.value.playing)
@@ -294,7 +330,7 @@ class SoundsScreenTest {
         compose.onNodeWithContentDescription("Close").assertIsNotEnabled()
         compose.runOnIdle { repository.deleteGate!!.complete(Unit) }
         compose.waitUntil { model.uiState.deleteId == null }
-        compose.onNodeWithText("No sounds yet").assertIsDisplayed()
+        compose.onNodeWithText("Add Record").assertIsDisplayed().assertIsEnabled()
         assertEquals(1, repository.deletes)
     }
     @Test fun cancellingStartupIgnoresItsLateCompletionAndReopeningIsFresh() {
