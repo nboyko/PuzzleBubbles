@@ -1,6 +1,6 @@
 # Iteration 2: Library functionality
 
-Status: **In progress**. Phases 1–3 are verified; the full iteration is not finished
+Status: **In progress**. Phases 1–4 are verified; the full iteration is not finished
 until the user explicitly confirms it.
 
 ## Verified phases
@@ -70,6 +70,22 @@ and process-restart recovery. Representative screen states were rendered and
 inspected on-device; Compose preview definitions compiled but were not rendered
 in the IDE. Broader device coverage, subjective speech quality, and actual disk-full
 operation remain unverified; injected storage failures are automated.
+
+### Phase 4: feat forgiving image selection
+
+What's That? accepts a swipe starting on either image bubble in any direction,
+including movement outside it. Each gesture selects its starting image once,
+using existing correct/incorrect feedback. Taps and accessible clicks remain
+available. Crossing another image, swiping during feedback, or holding a finger
+into the next round cannot submit extra answers; a cancelled touch below the
+movement threshold selects nothing.
+
+Verified: debug build, 14 unit tests, 21 emulator tests (seven new gesture tests
+plus game audio/navigation regressions), and lint with zero errors and 18 warnings.
+Emulator input and rendered screenshots confirmed correct/incorrect swipes,
+retry, round progression, Replay, and Back. Existing round/feedback previews
+compiled; they were not rendered in the IDE. Physical-phone verification of this
+gesture change remains unverified because the connected phone was locked.
 
 ## Remaining work
 

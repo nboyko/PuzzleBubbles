@@ -37,6 +37,8 @@ This overview describes the current checkout, not iteration acceptance.
   assessment remain outside that verification.
 - What's That? uses ten bundled image/audio pairs. Each randomized session has
   ten rounds, each target once, and two shuffled choices with explicit correctness.
+  Children can tap or swipe an image bubble in any direction to choose it, even
+  if their finger leaves the bubble. Each gesture selects only its starting image.
   Audio plays on entry and can be replayed. Wrong answers stay on the round;
   correct answers hide the other choice, center/grow the bubble, and play success
   audio together before advancing. Growth is capped at +30% and stays inside the

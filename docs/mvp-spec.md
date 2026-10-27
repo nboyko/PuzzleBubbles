@@ -265,7 +265,7 @@ The relationship is explicit in the data.
 1. A round starts.
 2. The round's audio is played.
 3. Several image choices are displayed.
-4. The child taps one image.
+4. The child taps an image or starts a swipe on its bubble.
 5. The application shows whether the answer is correct.
 6. If correct, the game proceeds to the next round.
 
@@ -282,6 +282,13 @@ The screen should contain:
 - a large play/replay button;
 - two large selectable image bubbles;
 - feedback after selection.
+
+Accept taps and swipes on either image bubble, using the same explicit answer
+data and feedback. A swipe in any direction selects its starting bubble once
+movement crosses the normal touch threshold, even if the finger leaves it.
+Crossing another image does not select a second answer. Keep accessible click
+activation, ignore input during feedback, and do not carry a held gesture into
+the next round. An interrupted touch before that threshold selects nothing.
 
 If the child selects an incorrect image:
 
