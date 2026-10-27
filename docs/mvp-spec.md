@@ -138,8 +138,47 @@ all conflicting actions are blocked during Save/Delete. Unchanged saved photos
 close without rewriting. Changed photos retain their ID, creation time, and
 order; safe replacement and recovery preserve a valid image after interruption.
 Re-editing uses the currently stored image, without retaining originals.
-See [the plan](plan.md) for lifecycle, failure recovery, and acceptance requirements;
-these paragraphs define scope, not implementation status.
+These paragraphs define requirements, not implementation status.
+
+The agreed **Record and Manage Library Sounds** feature is another phase of
+Iteration 2. Sounds retains the fixed Home/Library navigation, with Library
+selected; its recording modal covers and blocks the screen and navigation.
+The header plus opens the modal without requesting microphone access. Request
+`RECORD_AUDIO` only on Record. Handle denial and offer app settings when needed,
+without starting automatically on return.
+
+Record mono AAC in an MPEG-4 (`.m4a`) container, with a five-second recorder limit,
+manual Stop, and a visible timer. Keep the recorder and UI limit at 5,000 ms;
+allow at most 100 ms of native AAC/container output overhead (5,100 ms total).
+Validate that bound, preserve the actual duration, and reject longer output
+without trimming or transcoding. Preview only valid finalized recordings. Preview
+supports Play/Pause, a non-seekable progress line, Cancel, and explicit Save; X,
+Back, and backdrop taps cancel outside committing operations. Never save
+automatically. Rotation preserves the current session and its original deadline;
+true backgrounding discards unsaved work. Process death restores Sounds without
+a draft and reconciles incomplete storage operations.
+
+Preview also offers a Name field, initially focused with the complete `Track N`
+default selected (N = saved recording count + 1). Allow duplicate names; trim
+surrounding whitespace on Save and use the draft's default for blank input.
+Preserve the name through rotation and Save failures, and show it in saved rows.
+Naming is available before initial Save only; renaming saved sounds remains deferred.
+
+Persist generated IDs, names, duration, and creation time through a repository, keeping
+filenames and Room entities out of screens/domain models. Store recordings in
+private app-owned files, not Room blobs or bundled assets. Preserve Photos through
+an additive database migration. Saves and metadata-first deletion require cleanup
+and repeatable reconciliation after failures/interruption. Exclude recordings
+and their metadata together from backup and transfer.
+Give existing unnamed recordings default names through migration without changing
+their IDs, timestamps, durations, or audio files. Names are not unique identifiers.
+
+Saved rows support Play/Pause, progress, duration, and confirmed Delete. Only one
+recording may play at a time; recording and playback cannot overlap. Completion
+resets playback to the beginning; leaving/backgrounding stops it. Guard duplicate
+actions and stale callbacks. Import, waveform generation, seeking, editing,
+renaming, re-recording, and custom-game association are outside this phase.
+See [the current plan](plan.md) for the agreed next feature's acceptance criteria.
 
 The home/navigation step alone does not fulfill the playable MVP definition of
 done in section 16. Acceptance is evaluated against the selected iteration step;

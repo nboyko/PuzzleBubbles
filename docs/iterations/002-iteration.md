@@ -1,6 +1,6 @@
 # Iteration 2: Library functionality
 
-Status: **In progress**. Phases 1 and 2 are verified; the full iteration is not finished
+Status: **In progress**. Phases 1–3 are verified; the full iteration is not finished
 until the user explicitly confirms it.
 
 ## Verified phases
@@ -38,8 +38,42 @@ restart, deletion, unsaved-preview process death, small screens, and enlarged
 text. Older-device picker fallback and actual disk-full operation remain
 unverified manually; injected storage failures are covered by tests.
 
+### Phase 3: feat record and manage Library sounds
+
+Sounds has an Add Sound overlay with on-demand microphone permission, a visible
+timer, manual Stop, and native five-second auto-stop. Valid AAC/MPEG-4 drafts can
+be named, played/paused, cancelled, or explicitly saved. Selected `Track N`
+defaults and custom/duplicate names survive rotation and foreground Save failures.
+Saved rows show names, duration/progress, playback, and confirmed Delete. The modal
+blocks background navigation; its controls remain reachable with the keyboard.
+
+Stable IDs, private audio files, and Room metadata preserve Photos through additive
+migrations. Saves/deletes and reconciliation recover interrupted operations without
+duplicate entries. Rotation retains active work; true backgrounding discards
+unsaved drafts, including after a failed pending Save. Process restart removes
+abandoned drafts without recording or saving automatically. Recorder/UI limits
+remain 5,000 ms, with the agreed 100 ms native-output tolerance and actual duration
+preserved; output beyond 5,100 ms is rejected. Backup/transfer exclusions cover
+recordings and metadata together.
+
+Verified: debug build, 14 unit tests, and lint (zero errors, 18 warnings). The full
+physical Android 10 run had 72 passes and one pre-existing Android 16-only picker
+assumption reported as a failure; the test is unchanged from baseline and cannot
+run on this device. All 14 Sounds screen tests passed again after the final
+lifecycle and keyboard fixes. Native microphone/codec tests cover manual/immediate
+Stop and maximum duration; storage tests cover output tolerance, migration,
+persistence, and failure recovery. Existing Photos/game regressions passed.
+
+Phone checks covered permission denial/grant, auto-stop, naming, preview playback,
+Save/restart/Delete, cancellation, rotation, keyboard layout, background cleanup,
+and process-restart recovery. Representative screen states were rendered and
+inspected on-device; Compose preview definitions compiled but were not rendered
+in the IDE. Broader device coverage, subjective speech quality, and actual disk-full
+operation remain unverified; injected storage failures are automated.
+
 ## Remaining work
 
-Manual photo editing, Library audio, and custom-photo gameplay remain outside
-the verified phases. No next feature is defined by this record; agree it in
+The photo crop editor still has no separately finalized phase. Custom-photo
+gameplay, audio import, saved-sound editing, and custom-game audio association
+remain outside these verified phases. No next feature is defined here; agree it in
 [the plan](../plan.md) separately. Iteration closure requires explicit user confirmation.

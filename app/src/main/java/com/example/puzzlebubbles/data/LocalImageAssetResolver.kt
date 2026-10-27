@@ -14,6 +14,10 @@ object LocalImageAssetResolver {
         "ui-library" -> R.drawable.ic_library
         "ui-image" -> R.drawable.ic_image
         "ui-play" -> R.drawable.ic_play
+        "ui-pause" -> R.drawable.ic_pause
+        "ui-stop" -> R.drawable.ic_stop
+        "ui-microphone" -> R.drawable.ic_microphone
+        "ui-delete" -> R.drawable.ic_delete
         "ui-games" -> R.drawable.ic_games
         "ui-trophy" -> R.drawable.ic_trophy
         "completion-background" -> R.drawable.bubbles_bg

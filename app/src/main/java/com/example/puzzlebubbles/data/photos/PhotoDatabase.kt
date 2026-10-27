@@ -7,6 +7,11 @@ import androidx.room.Insert
 import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
+import com.example.puzzlebubbles.data.sounds.SoundDao
+import com.example.puzzlebubbles.data.sounds.SoundEntity
+import com.example.puzzlebubbles.domain.defaultSoundName
 
 @Entity(tableName = "photos")
 data class PhotoEntity(@PrimaryKey val id: String, val fileName: String, val createdAt: Long)
@@ -23,7 +28,29 @@ interface PhotoDao {
     suspend fun delete(id: String)
 }
 
-@Database(entities = [PhotoEntity::class], version = 1, exportSchema = true)
+@Database(entities = [PhotoEntity::class, SoundEntity::class], version = 3, exportSchema = true)
 abstract class PhotoDatabase : RoomDatabase() {
     abstract fun photos(): PhotoDao
+    abstract fun sounds(): SoundDao
+
+    companion object {
+        val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE TABLE IF NOT EXISTS `sounds` (`id` TEXT NOT NULL, `fileName` TEXT NOT NULL, " +
+                    "`durationMs` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, PRIMARY KEY(`id`))")
+            }
+        }
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `sounds` ADD COLUMN `name` TEXT NOT NULL DEFAULT ''")
+                db.query("SELECT id FROM sounds ORDER BY createdAt ASC, id ASC").use { rows ->
+                    var index = 0
+                    while (rows.moveToNext()) {
+                        db.execSQL("UPDATE sounds SET name = ? WHERE id = ?",
+                            arrayOf(defaultSoundName(index++), rows.getString(0)))
+                    }
+                }
+            }
+        }
+    }
 }

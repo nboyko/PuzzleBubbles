@@ -28,6 +28,7 @@ import com.example.puzzlebubbles.presentation.home.HomeScreen
 import com.example.puzzlebubbles.presentation.library.LibraryScreen
 import com.example.puzzlebubbles.presentation.library.PhotosScreen
 import com.example.puzzlebubbles.presentation.library.SoundsScreen
+import com.example.puzzlebubbles.presentation.library.SoundsViewModel
 import com.example.puzzlebubbles.presentation.library.PhotosViewModel
 import com.example.puzzlebubbles.PuzzleBubblesApplication
 import androidx.compose.ui.platform.LocalContext
@@ -91,7 +92,10 @@ fun PuzzleBubblesApp(
                 )
             }
             composable("library/sounds") {
+                val app = LocalContext.current.applicationContext as PuzzleBubblesApplication
+                val soundsModel: SoundsViewModel = viewModel(factory = SoundsViewModel.Factory(app))
                 SoundsScreen(
+                    model = soundsModel,
                     onBack = { navController.popBackStack() },
                     onHome = { navController.popBackStack("home", inclusive = false) },
                     modifier = Modifier.fillMaxSize(),

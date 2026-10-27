@@ -50,8 +50,8 @@ nested icon folders without a concrete need.
 | `audio/sfx/` | UI/gameplay feedback sounds, separate from content data |
 
 Current source inventory: two PNG covers, the supplied completion background
-`images/game-covers/bubbles-bg.png`, 15 PNG gameplay images, ten SVGs (including
-the logo, Photos, close, and plus icons), ten MP3 prompts in `audio/content/`, and the effects
+`images/game-covers/bubbles-bg.png`, 15 PNG gameplay images, fourteen SVGs (including
+the logo, Photos, close, plus, microphone, pause, stop, and delete icons), ten MP3 prompts in `audio/content/`, and the effects
 `audio/sfx/pop.wav` and `audio/sfx/yay.mp3`. Preserve unreferenced
 gameplay source images; source inventory does not imply that every image is
 already packaged or used by a game.
@@ -87,7 +87,7 @@ unnecessary re-encoding or duplicate exports. Never change an extension without
 converting the actual format.
 
 The current runtime contains two WebP covers, ten 512px gameplay PNGs,
-the unchanged 887 × 1774 completion background `bubbles_bg.png`, ten UI/logo vectors,
+the unchanged 887 × 1774 completion background `bubbles_bg.png`, fourteen UI/logo vectors,
 ten `content_*.mp3` prompts, `sfx_pop.wav`, and `sfx_game_complete.mp3`. These
 format/size exceptions are intentional. Existing launcher assets remain in
 Android's drawable/mipmap folders.
@@ -109,6 +109,10 @@ Android's drawable/mipmap folders.
 | `ui-plus` | `icons/plus.svg` | `drawable/ic_plus.xml` |
 | `app-logo` | `icons/bubbles_logo.svg` | `drawable/ic_bubbles_logo.xml` |
 | `ui-play` | `icons/play.svg` | `drawable/ic_play.xml` |
+| `ui-pause` | `icons/pause.svg` | `drawable/ic_pause.xml` |
+| `ui-stop` | `icons/stop.svg` | `drawable/ic_stop.xml` |
+| `ui-microphone` | `icons/microphone.svg` | `drawable/ic_microphone.xml` |
+| `ui-delete` | `icons/delete.svg` | `drawable/ic_delete.xml` |
 | `ui-games` | `icons/games.svg` | `drawable/ic_games.xml` |
 | `ui-trophy` | `icons/trophy.svg` | `drawable/ic_trophy.xml` |
 
@@ -177,7 +181,7 @@ Imported Library photos use private persistent storage at
 `filesDir/library/images/<photo-id>.webp`, separate from bundled assets and
 editable repository sources. Keep only the normalized 1024 × 1024 WebP; do not
 copy imported originals into `assets/source/` or `res/`. Respect EXIF orientation
-before center cropping; the normalized preview is encoded as lossy WebP at quality 85.
+before the square crop editor; the selected crop is encoded as lossy WebP at quality 85.
 
 Generate an app-owned stable photo ID. Store only ID, internal filename, and
 creation time in Room (`photos.db`); never image blobs or a gallery URI as the canonical asset.
@@ -191,6 +195,41 @@ cleans up any unreferenced file after a failed/interrupted removal. Never delete
 the source gallery photo or bundled artwork. Imported files and their database
 are excluded together from cloud backup and device transfer. Bundled asset IDs,
 formats, and source/runtime folder conventions above remain unchanged.
+
+### Parent-recorded sound storage convention
+
+Library recordings are private user content at
+`filesDir/library/audio/<sound-id>.m4a`, separate from bundled assets. Capture
+mono AAC/MPEG-4 with a five-second recording limit (currently 44.1 kHz, 64 kbps).
+The recorder maximum and UI deadline remain 5,000 ms. Permit at most 100 ms of
+native output overhead: validate positive actual duration up to 5,100 ms before
+Preview/Save and during reconciliation. Keep the actual duration in metadata
+and playback; reject longer output without trimming, transcoding, or clamping.
+Do not copy recordings into `assets/source/` or Android resources, transcode them
+into bundled formats, or store binary audio in Room. Bundled audio conventions
+above remain unchanged.
+
+Room's `sounds` table in the existing `photos.db` stores ID, internal filename,
+display name, actual duration, and creation time. Schema version 2 adds this table
+through a non-destructive 1 → 2 migration preserving Photos. Version 3 adds names
+and assigns `Track N` defaults to existing recordings in oldest-first order,
+preserving audio files and IDs. Display names may repeat and never become filenames.
+Screens/domain models expose
+stable `library-sound:<sound-id>` asset IDs and metadata, never filesystem paths.
+
+Unsaved recordings use leased `sound-draft:<id>` IDs and temporary `.m4a` files
+under `library/audio/drafts/`. Rotation retains the live draft; cancellation,
+backgrounding, and startup recovery remove abandoned drafts. Save copies valid
+audio to a synced `<id>.m4a.tmp`, promotes it, and commits metadata. Reconciliation
+preserves valid committed files and removes incomplete/orphaned output and invalid
+entries. Ordinary Save failure preserves a usable draft for explicit retry where
+possible; nothing is saved or retried automatically.
+
+Deletion removes metadata first and then the owned file. Failed file cleanup
+cannot resurrect the entry; subsequent reconciliation retries removal. Never
+delete bundled audio or unrelated files. Existing legacy-backup, cloud-backup,
+and device-transfer exclusions already cover the whole `library/` subtree and
+`photos.db` with its journal/WAL/SHM files, excluding recordings and metadata together.
 
 ### Bundled content
 

@@ -196,17 +196,14 @@ class HomeNavigationTest {
     }
 
     private fun assertMediaReady(title: String) {
-        if (title == "Photos") {
-            // Photos may contain persisted images. Its isolated screen tests cover
-            // empty/grid states; navigation waits for asynchronous loading to finish.
-            compose.waitUntil(timeoutMillis = 5_000) {
-                compose.onAllNodes(hasContentDescription("Add Photo") and isEnabled())
-                    .fetchSemanticsNodes().isNotEmpty()
-            }
-            compose.onNodeWithContentDescription("Add Photo").assertIsDisplayed().assertIsEnabled()
-        } else {
-            compose.onNodeWithText("No sounds yet").assertIsDisplayed()
+        // Both libraries may contain persisted content. Wait for storage loading
+        // before checking navigation; isolated screen tests cover empty/list states.
+        val add = if (title == "Photos") "Add Photo" else "Add Sound"
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodes(hasContentDescription(add) and isEnabled())
+                .fetchSemanticsNodes().isNotEmpty()
         }
+        compose.onNodeWithContentDescription(add).assertIsDisplayed().assertIsEnabled()
     }
 
     private fun openLibrary() {

@@ -10,16 +10,31 @@ This overview describes the current checkout, not iteration acceptance.
 - Home and My Library share a fixed bottom navigation bar with labeled icons
   and a raised bubble around the active icon. There are no top tabs.
 - My Library has Photos and Sounds destinations with Back to My Library and
-  fixed Home/Library navigation. Sounds remains an empty placeholder. Photos
-  shows saved images or an empty state, with a plus button beside its title.
+  fixed Home/Library navigation. Photos shows saved images or an empty state,
+  with a plus button beside its title.
   No sample media is added. Home scroll position and navigation survive recreation.
 - Add Photo selects one image through Android's system picker and opens a
-  full-screen, centered square preview. Save stores a 1024 × 1024 WebP; Cancel
-  discards it. A saved photo opens Delete/Save/X controls: Delete removes only
-  the Library copy, while Save and X close unchanged. The modal blocks Back and
-  background navigation. Preview and busy state survive rotation; an unsaved
-  preview is discarded after process death. Manual editing and use in games
-  are not included.
+  square crop editor in a modal. Pan/pinch adjusts the crop; Save stores a
+  1024 × 1024 WebP and X, Back, or the backdrop discards unsaved changes.
+  Saved photos open the same editor with Delete/Save controls. Changed crops
+  retain the photo's identity; unchanged Save closes without rewriting.
+  The modal blocks background navigation and conflicting operations. Preview
+  and busy state survive rotation; unsaved work is discarded after process
+  death. Photos are not yet used in games.
+- Sounds records microphone audio in a modal, stopping automatically after five
+  seconds or when Stop is pressed. Native AAC output may have up to 100 ms of
+  overhead; files longer than 5,100 ms are rejected and actual duration is retained.
+  Preview supports Play/Pause, Cancel, and
+  explicit Save. Preview has a selected `Track N` name default that can be replaced;
+  duplicate names are allowed. Saved rows show names, playback progress, and confirmed Delete.
+  Renaming saved recordings is deferred.
+  Rotation preserves the recording/preview; leaving or backgrounding discards
+  unsaved work. Permission is requested only on Record. Save/Delete are guarded
+  against repeated taps, and the modal blocks underlying navigation.
+  The modal scrolls and resizes for the keyboard, including on Android 10.
+  Native capture, duration limits, playback, and recovery have been checked on a
+  physical Android 10 phone; broader device coverage and subjective speech-quality
+  assessment remain outside that verification.
 - What's That? uses ten bundled image/audio pairs. Each randomized session has
   ten rounds, each target once, and two shuffled choices with explicit correctness.
   Audio plays on entry and can be replayed. Wrong answers stay on the round;
@@ -40,17 +55,22 @@ One Android `app` module, with sources under
 
 - `presentation/`: Compose screens, ViewModels, and Navigation Compose routes
   (`home`, `library`, `library/photos`, `library/sounds`, `choose-it`, `matching`);
-  game screens are grouped by mechanic. Photos has a destination-scoped ViewModel
-  and renders images through stable asset IDs.
+  game screens are grouped by mechanic. Photos and Sounds have destination-scoped
+  ViewModels and consume stable asset IDs.
 - `domain/`: catalog/content models and pure session generation/state transitions.
   Static content stays separate from session progress; asset references are stable IDs.
   `PhotoRepository` exposes Library photo IDs and creation times without file paths.
+  `SoundRepository` exposes recording IDs, names, durations, and creation times; separate
+  recorder and playback contracts keep native audio out of screen state.
 - `data/`: `GameRepository` implementation with a Kotlin preset, resource
   resolvers, and single-instance `MediaPlayer` playback. `data/photos` handles
   sampled decoding, EXIF orientation, center cropping, private WebP files, and
-  Room metadata (schema version 1, exported under `app/schemas/`). Saves and
+  Room metadata (schema version 3, exported under `app/schemas/`). Saves and
   deletes are serialized with reconciliation of interrupted operations.
-  `PuzzleBubblesApplication` owns the photo services; `MainActivity` wires the
+  `data/sounds` stores private AAC/MPEG-4 recordings, stages validated saves,
+  and reconciles interrupted writes and deletions. The existing `photos.db` has
+  an additive migration for sound metadata, preserving photo records.
+  `PuzzleBubblesApplication` owns Library storage services; `MainActivity` wires the
   rendering boundary and game dependencies. The Choose It ViewModel is scoped
   to its navigation destination.
 
@@ -59,8 +79,9 @@ audio when leaving the game. Leaving and reopening starts a fresh session;
 session progress is not stored persistently. Blur-based icon glow is supported
 on Android 12+; older supported devices retain the unblurred icon and rim.
 
-Game content is bundled locally; imported photos stay in app-owned storage and
-are excluded together with their metadata from cloud backup and device transfer.
+Game content is bundled locally; imported photos and user recordings stay in
+app-owned storage and are excluded with their metadata from cloud backup and
+device transfer. Recordings are not yet used in games.
 There is no network integration. Bundled source assets live under `assets/source/`;
 their runtime assets are Android resources.
 See [asset conventions](docs/content-assets.md) for formats, paths, and IDs.

@@ -1,681 +1,843 @@
-# Plan 003 — Image Crop Editor
+# Plan 004 — Record and Manage Library Sounds
 
-Status: **Agreed scope; not implemented**. This is the next feature phase of
-Iteration 2. The full iteration remains open until the user explicitly finishes it.
+Status: **Verified and finalized** as Phase 3 of the still-open Iteration 2.
+The requirements and acceptance criteria below are retained for this completed
+feature, including the agreed 100 ms native-output tolerance. Iteration closure
+remains manual; the next feature scope has not yet been agreed.
+
+Verified outcome: parents can record, preview, name, save, play/pause, and delete
+private Library sounds. Rotation, foreground/background cleanup, interrupted
+storage recovery, and additive migrations are covered. The keyboard remains
+usable on the physical Android 10 device. Build and 14 unit tests passed; lint
+has zero errors and 18 warnings. The full device run had 72 passes and the
+unchanged Android 16-only picker assumption reported as a failure on Android 10;
+the final 14 Sounds screen tests passed after the lifecycle/keyboard fixes.
+See [Iteration 2](iterations/002-iteration.md) for rendering and verification limits.
 
 ## Goal
 
-Extend the existing photo-library flow with an interactive image editor.
+Allow a parent to create short audio recordings directly inside Puzzle Bubbles and manage the saved recordings from the **Sounds** library.
 
-The parent can choose exactly which square area of an image Puzzle Bubbles should save by:
-
-- dragging the image with one finger;
-- zooming with a pinch gesture.
-
-The crop area itself always remains a fixed square.
-
-This editor is used in two places:
+This feature phase covers the complete flow:
 
 ```text
-new photo
-Photo Picker
-    ↓
-Image Editor
-    ↓
-Save new photo
-
-existing photo
-Photos Library
-    ↓
-Tap saved photo → Image Editor directly
-    ↓
-Replace existing photo
+Sounds
+   ↓
++ Add Sound
+   ↓
+Recording modal
+   ↓
+Record
+   ↓
+recording for max 5 seconds
+   ↓
+Preview
+   ↓
+Save
+   ↓
+saved sound appears in Sounds list
+   ↓
+Play / Delete
 ```
 
-The application still stores only the processed **1024 × 1024** image.
+This feature phase supports **recording only**.
 
-The original gallery image is not retained.
+Importing an existing audio file from the device is deferred to a later feature.
 
 ---
 
-## 1. Editor Modal
+## 1. Sounds Screen
 
-The image editor is a modal overlay on Photos, using a rounded panel over a
-dimmed background. Keep it in the existing Photos flow; do not add a separate
-page or navigation destination. The panel adapts to smaller screens and rotation.
+Keep the existing Sounds library screen.
 
-Do not display bottom navigation.
-
-Conceptually, for a new photo:
-
-```text
-                           ×
-
-┌────────────────────────────┐
-│                            │
-│       darkened image       │
-│                            │
-│     ┌──────────────┐       │
-│     │              │       │
-│     │ visible crop │       │
-│     │     area     │       │
-│     │              │       │
-│     └──────────────┘       │
-│                            │
-│       darkened image       │
-│                            │
-└────────────────────────────┘
-
-            Save
-```
-
-The exact visual styling should follow the existing Puzzle Bubbles design.
-
-For a **new, unsaved photo**, show a full-width Save button at the bottom and an accessible
-X close control at the top right. Do not show Delete or a header Back arrow.
-
-For a **saved photo**, show Delete / Save at the bottom and an accessible X
-close control at the top right. X cancels unsaved edits. There is no bottom
-Cancel button and no intermediate viewer or separate Edit action.
-
-Both states cover and block the Photos page and bottom navigation. There is no
-visible editor title. Tapping the backdrop cancels editing, like Back and X in
-section 11; dismissal is blocked during Save/Delete.
-
----
-
-## 2. Fixed Crop Area
-
-The saved area is always:
-
-```text
-1 : 1
-```
-
-The crop square:
-
-- remains centered on screen;
-- does not move;
-- does not resize;
-- represents exactly what will be saved.
-
-These constraints apply within the current layout: there are no user resizing
-handles. After rotation or a screen-size change, the viewport may adapt to the
-available editor area while preserving the selected source region.
-
-The **image moves underneath the crop area**, rather than moving the crop rectangle over the image.
-
-This gives the interaction a simple mental model:
-
-```text
-crop window stays still
-        +
-photo moves behind it
-```
-
----
-
-## 3. Crop Overlay
-
-Make the crop area visually obvious.
-
-The image should remain visible across the editor, but everything **outside the crop square** should have a semi-transparent dark overlay.
+Add a **plus / Add Sound** button in the top-right area of the header, following the same pattern as the Photos screen.
 
 Conceptually:
 
 ```text
-          dark overlay
-             ↓
-┌─────────────────────────┐
-│█████████████████████████│
-│████┌───────────────┐████│
-│████│               │████│
-│████│ saved content │████│
-│████│               │████│
-│████└───────────────┘████│
-│█████████████████████████│
-└─────────────────────────┘
+←    [icon] Sounds                  +
 ```
 
-Inside the square:
+Tapping `+` opens the recording experience. Preserve the fixed Home/Library bottom
+navigation on Sounds, with Library selected. The modal covers and blocks the
+underlying screen and navigation; do not add another navigation destination.
 
-- image remains at normal brightness;
-- no tint should alter the preview.
+Keep recording in an overlay on the existing Sounds route, without a separate
+full-screen destination.
 
-Outside the square:
+The recording experience should visually behave like the existing photo preview/editor:
 
-- apply a translucent dark scrim.
-
-Optionally add a subtle border around the crop square if it improves clarity.
-
-Avoid a heavy grid or professional photo-editor UI.
-
-This should remain visually simple and friendly.
+- displayed as a modal/overlay;
+- focused on one temporary task;
+- background content remains visually behind it;
+- modal can be closed with an `X`.
 
 ---
 
-## 4. Initial Image Position
+## 2. Recording Modal
 
-### New image from gallery
-
-When an image first enters the editor:
-
-1. orient it correctly;
-2. scale it so the crop square is completely filled;
-3. center the image inside the crop square.
-
-This produces the same **center crop** currently used by the application.
-
-Saving without interaction should produce the same centered crop and visual
-composition as the current automatic behavior; byte-identical WebP encoding is
-not required.
-
-The current processor crops and normalizes before showing the preview. Adapt
-this pipeline to keep a sampled, correctly oriented, **uncropped** editing
-source temporarily, so panning can reveal areas outside the initial square.
-Do not feed an already center-cropped 1024 × 1024 draft into the new-photo editor.
-Produce the final normalized crop only on Save; do not retain the original afterward.
-
-### Existing library image
-
-Existing library images are already:
+Initial state:
 
 ```text
-1024 × 1024
+┌─────────────────────────────┐
+│                         ✕   │
+│                             │
+│        Record Sound         │
+│                             │
+│           0:00              │
+│                             │
+│        [ ● Record ]         │
+│                             │
+└─────────────────────────────┘
 ```
 
-When editing one:
+The exact styling should follow the existing Puzzle Bubbles visual system.
 
-- show the existing saved image;
-- initially fill the crop square exactly;
-- use it as the new editing source.
+The modal has several explicit states:
 
-Because the original photo is not retained, subsequent edits operate on the already processed image.
+```text
+IDLE
+  ↓
+RECORDING
+  ↓
+PREVIEW
+  ↓
+SAVED / CANCELLED
+```
 
-Some quality loss after repeated zooming/cropping is accepted for this MVP.
+Do not mix recording and playback states implicitly.
 
 ---
 
-## 5. Drag / Pan
+## 3. Microphone Permission
 
-Allow the parent to move the image using one-finger dragging.
+Do not request microphone permission:
+
+- when the application starts;
+- when Library opens;
+- when Sounds opens;
+- when the recording modal opens.
+
+Request `RECORD_AUDIO` only when the parent presses **Record**.
+
+Flow:
+
+```text
+tap Record
+    ↓
+permission already granted?
+    ├── yes → start recording
+    └── no  → request microphone permission
+                    ↓
+                granted?
+                ├── yes → start recording
+                └── no  → stay idle
+```
+
+If permission is denied:
+
+- recording must not start;
+- keep the recording modal usable;
+- provide clear, non-technical feedback.
+
+For example:
+
+```text
+Microphone access is needed to record a sound.
+```
+
+Do not crash or close the modal.
+
+If Android no longer allows the permission prompt to be displayed, provide a reasonable route to the application's system settings.
+
+---
+
+## 4. Recording State
+
+Once recording starts, the modal changes to the recording state.
+
+Conceptually:
+
+```text
+┌─────────────────────────────┐
+│                         ✕   │
+│                             │
+│        Recording…           │
+│                             │
+│         0:03 / 0:05         │
+│                             │
+│         [ ■ Stop ]          │
+│                             │
+└─────────────────────────────┘
+```
+
+Show a clearly visible elapsed timer.
+
+The maximum recording duration is:
+
+```text
+5 seconds
+```
+
+The recording stops in either of two ways:
+
+### Manual stop
+
+The parent presses **Stop** before five seconds.
+
+### Automatic stop
+
+The recording reaches five seconds.
+
+The UI should then automatically move to Preview.
+
+The implementation should use the recorder's maximum-duration capability as a hard recording limit and correctly handle its asynchronous completion behavior.
+
+Keep the recorder maximum and visible timer at 5,000 ms. Allow up to 100 ms of
+native AAC/container output overhead: the actual validated file duration must
+be positive and at most 5,100 ms. Preserve that actual duration in metadata and
+playback; do not clamp it or trim/transcode the audio. Reject longer output.
+
+---
+
+## 5. Temporary Recording
+
+While recording and previewing, the audio is temporary.
+
+Conceptually:
+
+```text
+temporary recording
+      ↓ Save
+permanent library file
+```
+
+Do not create a permanent library database entry immediately when recording starts.
+
+If the parent:
+
+- closes the modal;
+- presses Cancel;
+- leaves before saving;
+- encounters an unrecoverable recording error;
+
+delete the temporary recording file.
+
+Temporary recordings must not accumulate in application storage.
+
+---
+
+## 6. Audio Format
+
+Record locally using:
+
+```text
+container: MPEG-4
+codec: AAC
+extension: .m4a
+```
+
+Optimize settings for short spoken audio rather than music-quality recording.
+
+Mono audio is sufficient.
+
+Do not store raw PCM/WAV files for user recordings.
+
+The exact bitrate/sample-rate settings may follow Android/device capabilities, but they should produce clear speech without unnecessarily large files.
+
+Saved recordings should live in app-owned storage.
+
+Conceptually:
+
+```text
+library/
+├── images/
+│   └── ...
+│
+└── audio/
+    ├── <audio-id>.m4a
+    ├── <audio-id>.m4a
+    └── ...
+```
+
+Use stable generated IDs rather than names supplied by the recorder or temporary filesystem.
+
+---
+
+## 7. Recording Preview
+
+After manual or automatic stopping has finalized a valid recording, transition
+to Preview. Invalid or failed output returns to a usable idle/error state, never
+a playable or saveable preview.
+
+Conceptually:
+
+```text
+┌─────────────────────────────┐
+│                         ✕   │
+│                             │
+│        Your Recording       │
+│                             │
+│   ▶ ─────────────── 0:03    │
+│                             │
+│     Cancel        Save      │
+│                             │
+└─────────────────────────────┘
+```
+
+The parent can listen to the complete temporary recording before deciding whether to keep it.
+
+Show a single-line Name field in Preview, prefilled with `Track N`, where N is
+the current number of saved recordings plus one. Initially focus the field and
+select its text so typing replaces the default. Names need not be unique; deleting
+recordings may reuse a default number. Preserve the entered name and selection
+through rotation, and the name through Save failures. Trim surrounding whitespace
+on Save; a blank name uses the original default for that draft. Save is explicit
+and the field is disabled while saving. Keep controls reachable with the keyboard.
+
+### Playback control
+
+Show:
+
+- Play / Pause control;
+- simple playback progress track;
+- duration.
+
+Do **not** implement a waveform.
+
+The progress track represents playback position only:
+
+```text
+▶  ━━━━━━━●─────────  0:03
+```
+
+It does not need to display audio amplitude.
+
+---
+
+## 8. Preview Playback
+
+Pressing Play:
+
+- starts playback from the current position;
+- changes Play to Pause while playing;
+- updates the progress indicator.
+
+When playback reaches the end:
+
+- stop playback;
+- reset the control to Play;
+- reset playback position to zero, ready for another Play.
+
+Only one instance of the recording may play at a time.
+
+Repeated taps must not layer multiple playback instances.
+
+If the parent closes the modal during playback:
+
+- stop playback;
+- release playback resources;
+- delete the temporary recording unless it has already been saved.
+
+---
+
+## 9. Preview Actions
+
+Once recording exists, the original Record action is replaced by:
+
+```text
+Cancel     Save
+```
+
+### Cancel
+
+Cancel:
+
+1. stops preview playback if active;
+2. deletes the temporary recording;
+3. closes the modal;
+4. leaves the Sounds library unchanged.
+
+The `X`, system Back, and a backdrop tap have the same cancel result in any
+non-committing modal state, including stopping/discarding an active recording.
+Taps inside the panel do not dismiss it. During Save/Delete, block conflicting
+actions and dismissal until the operation finishes.
+
+### Save
+
+Save:
+
+1. stops playback if necessary;
+2. creates a stable library sound ID;
+3. moves or safely copies the temporary file into permanent app-owned audio storage;
+4. persists its metadata;
+5. closes the modal;
+6. immediately shows the saved recording in the Sounds list.
+
+Show lightweight confirmation if appropriate:
+
+```text
+Sound saved
+```
+
+Do not show a blocking success dialog.
+
+---
+
+## 10. Sound Metadata
+
+Persist only the metadata required by the library.
+
+Conceptually:
+
+```kotlin
+LibrarySound(
+    id: String,
+    assetId: String,
+    name: String,
+    durationMs: Long,
+    createdAt: Long
+)
+```
+
+Follow the Photos metadata boundary: generate an app-owned ID and expose the
+stable rendering/playback ID `library-sound:<id>`, name, duration, and creation time to
+Compose through a repository. Keep filenames, filesystem paths, Android resource
+IDs, and Room entities out of screen/domain models. The persistence entity stores
+ID, internal `<id>.m4a` filename, name, actual validated duration, and creation time.
+
+Extend the existing Room database with a sounds table and an additive migration
+that preserves existing Photos records. Do not rename the database, use destructive
+migration, or reorganize unrelated photo code. Show sounds newest first, matching
+Photos; do not add sample entries or require user-supplied names. Use meaningful
+accessible labels such as "Recording 1, 3 seconds", with stable IDs for identity.
+Add a non-destructive migration for already-saved unnamed recordings, assigning
+`Track 1`, `Track 2`, etc. in oldest-first order without changing IDs or audio files.
+
+Do not store binary audio inside Room.
+
+Do not store:
+
+- waveform data;
+- transcript;
+- category;
+- game association.
+
+The audio file itself belongs in app-owned filesystem storage.
+
+---
+
+## 11. Saved Sounds List
+
+Saved recordings appear on the existing Sounds screen.
+
+Each row should contain:
+
+```text
+┌──────────────────────────────────┐
+│ ▶   ────────────────  0:03    🗑 │
+└──────────────────────────────────┘
+```
+
+Specifically:
+
+- saved name;
+- Play/Pause button at the start;
+- playback progress track;
+- duration;
+- Delete button at the end.
+
+A waveform is not required.
+
+Names are editable only before the initial Save. Saved recordings have no Rename
+or Edit action in this phase. Names never determine identity or filesystem paths.
+
+---
+
+## 12. Playing Saved Sounds
+
+Tapping Play on a saved recording:
+
+1. begins playback;
+2. changes its Play icon to Pause;
+3. updates its progress track;
+4. stops/reset appropriately when playback completes.
+
+Only one sound may play at a time.
+
+If another sound is already playing:
+
+```text
+Sound A playing
+      ↓
+tap Sound B
+      ↓
+stop Sound A
+      ↓
+play Sound B
+```
+
+Do not allow multiple recordings to play simultaneously.
+
+Leaving the Sounds screen should stop active playback and release playback resources.
+
+---
+
+## 13. Playback Progress
+
+The progress UI is intentionally simple.
+
+Use a normal progress line:
+
+```text
+▶  ━━━━━●────────────  0:02 / 0:04
+```
+
+This is a **playback progress indicator**, not an audio waveform.
+
+For this feature phase it does not need to be seekable.
+
+The parent only needs to see:
+
+- whether audio is playing;
+- how far through the recording playback has progressed;
+- the recording duration.
+
+Seeking can be added later if there is an actual need.
+
+---
+
+## 14. Delete Saved Sound
+
+Each saved sound row includes a Delete action.
+
+When Delete is confirmed:
+
+1. stop playback if that sound is currently playing;
+2. delete its persistent metadata transactionally;
+3. delete the app-owned audio file;
+4. immediately remove the row from the Sounds list.
+
+Use a lightweight confirmation before permanently deleting the recording.
+
+For example:
+
+```text
+Delete this sound?
+
+Cancel    Delete
+```
+
+This avoids accidental deletion because there is no recovery/undo mechanism yet.
+
+Deletion must clean up both:
+
+```text
+database metadata
++
+audio file
+```
+
+Follow the Photos deletion/recovery approach. A failed file removal must not
+resurrect the deleted item; reconciliation retries cleanup of the unreferenced
+owned file. A metadata failure preserves the existing item and file. Keep a
+friendly error and explicit retry available; never delete unrelated files.
+
+---
+
+## 15. Existing Sounds
+
+There is no editor/details screen for an existing sound in this feature phase.
+
+Tapping or interacting with an existing recording only supports the actions exposed directly in its row:
+
+```text
+Play / Pause
+Delete
+```
+
+Do not add:
+
+- opening the sound in a modal;
+- re-recording;
+- replacing;
+- renaming;
+- trimming;
+- editing.
+
+---
+
+## 16. Recording Lifecycle
+
+Recording is allowed only while the app is actively in the foreground.
+
+- True backgrounding (Home, locking, or switching apps) stops recording/playback,
+  releases resources, discards any unsaved recording or preview, and closes the
+  modal. Returning to Sounds does not restart recording or playback.
+- Rotation and ordinary activity recreation are not abandonment: retain the modal,
+  temporary recording/preview, selected state, and any in-progress operation. An
+  active recording continues only within its original five-second limit; rotation
+  must not restart its timer or create another recorder. No automatic Save.
+- Process death discards unsaved work. Reopen Sounds without a restored draft,
+  automatic recording, playback, or Save; clean interrupted temporary files before
+  exposing persisted content. Already committed items remain saved.
+- System permission UI is not a cancellation by itself. A permission result may
+  start recording only for the still-open requesting modal, the current Record
+  request, and an active foreground screen. Ignore stale results after cancellation
+  or genuine backgrounding; returning from Settings requires another Record tap.
+- Once an explicit Save/Delete is committing, let that single bounded operation
+  finish safely even if the app backgrounds. Never discard a committed file as if
+  it were an unsaved draft. Reconcile interruptions on next load; do not auto-retry.
+
+No foreground service is needed. Release `MediaRecorder` resources when recording
+finishes or is abandoned. Unfinished previews remain temporary until explicit Save;
+auto-stop and lifecycle restoration never persist them automatically.
+
+---
+
+## 17. Error Handling
+
+Handle recording failures gracefully.
+
+Possible cases include:
+
+- microphone unavailable;
+- permission denied;
+- recorder initialization failure;
+- recorder stop failure;
+- temporary-file creation failure;
+- storage write failure;
+- playback failure.
+
+Use parent-friendly feedback.
 
 Example:
 
 ```text
-finger →→→
-
-crop stays fixed
-
-image →→→
+Couldn't record this sound.
+Please try again.
 ```
 
-Movement should feel direct:
+Do not expose stack traces, codec errors, file paths, or Android implementation details.
 
-- no inertia;
-- no fling;
-- no snapping between positions.
-
-The image follows the finger.
-
-### Movement constraints
-
-The image must always completely cover the crop square.
-
-The user must never be able to create:
-
-```text
-┌──────────────┐
-│ IMAGE        │
-│ IMAGE        │
-│ IMAGE   EMPTY│
-│         EMPTY│
-└──────────────┘
-```
-
-When the image reaches its valid movement boundary, additional dragging in that direction should simply stop moving it.
+A failed recording must not create a broken library item.
 
 ---
 
-## 6. Pinch to Zoom
+## 18. State Model
 
-Support standard two-finger pinch zoom.
-
-```text
-pinch inward  → zoom out
-pinch outward → zoom in
-```
-
-Zoom should feel continuous rather than stepping through predefined levels.
-
-### Minimum zoom
-
-The minimum zoom is the scale at which the image still completely covers the crop square.
-
-The parent cannot zoom out beyond this point.
-
-For example, for a landscape image:
-
-```text
-┌───────────────────────────┐
-│                           │
-│     ┌─────────────┐       │
-│     │ crop square │       │
-│     └─────────────┘       │
-│                           │
-└───────────────────────────┘
-```
-
-the initial center-crop scale is also the minimum scale.
-
-For an already saved square image, its initial full-square view is the minimum zoom.
-
-### Maximum zoom
-
-Apply a reasonable maximum zoom so accidental gestures cannot create absurd magnification.
-
-Something around:
-
-```text
-4× relative to minimum scale
-```
-
-is a sensible initial limit.
-
-This value can be adjusted after testing.
-
----
-
-## 7. Combined Gestures
-
-Dragging and zooming should work naturally together.
-
-A two-finger gesture may change:
-
-```text
-scale
-+
-position
-```
-
-at the same time.
-
-Rotation should be ignored.
-
-Do not rotate the image in response to twisting gestures.
-
-Jetpack Compose provides `transformable` / transform gesture APIs for exactly this kind of pan and zoom interaction.
-
-Use rendering transforms rather than recomputing the bitmap continuously while the parent is moving it. Compose's `graphicsLayer` supports scale and translation at draw time, which is appropriate for interactive preview transformations.
-
----
-
-## 8. Saving
-
-Pressing **Save** converts the current editor state into the final library image.
-
-The saved result must correspond exactly to the visible crop square.
+The modal should have explicit state.
 
 Conceptually:
 
 ```text
-original / current source image
-        +
-zoom
-        +
-translation
-        +
-square viewport
-        ↓
-render crop
-        ↓
-1024 × 1024
-        ↓
-WebP
+IDLE
+  ↓ Record
+RECORDING
+  ├── Stop
+  └── 5 second limit
+         ↓
+PREVIEW
+  ├── Play / Pause
+  ├── Cancel
+  └── Save
+         ↓
+SAVED
 ```
 
-Do not save the entire transformed image.
+Possible failure transitions should return to a usable state rather than leaving recording controls stuck.
 
-Only the area visible inside the crop square becomes the output.
+Do not derive recorder state only from visible buttons. Represent pending
+permission, starting, stopping/finalizing, saving, and deleting explicitly enough
+to guard transitions; the Kotlin representation need not mirror every diagram.
+
+Acquire action guards synchronously before launching asynchronous work. Disable
+and ignore duplicate Record, Stop, Save, Delete, permission requests, and conflicting
+close/navigation actions. Manual Stop, the maximum-duration callback, and recorder
+errors must converge on one finalization/cleanup path for that recorder session.
+Ignore callbacks from cancelled or replaced sessions. Do not impose a blanket delay
+on Play/Pause: serialize those transitions and maintain one playback instance.
+
+Configure the recorder maximum to 5,000 ms, not just a UI timer. Treat the maximum-
+duration callback as asynchronous stopping, not proof that the file is ready.
+Finalize/validate the playable AAC/MPEG-4 file and read its actual duration before
+Preview or Save. Immediate Stop may yield no valid data: delete that output and
+return to idle with a friendly retry message. Do not add trimming or conversion.
 
 ---
 
-## 9. Saving a New Photo
+## 19. Reuse Existing Audio Infrastructure
 
-For a newly selected gallery image:
+Before adding new playback code, inspect the existing What's That? audio implementation.
 
-```text
-Photo Picker
-    ↓
-Image Editor
-    ↓
-Save
-    ↓
-create new stable photo ID
-    ↓
-write 1024 × 1024 WebP
-    ↓
-persist metadata
-    ↓
-Photos
-```
+If there is already a suitable audio playback abstraction, reuse or extend it where appropriate.
 
-The gallery original is only a temporary input.
+Do not create two unrelated playback systems if the existing one can safely support local library files.
 
-After successfully producing the Puzzle Bubbles image, do not retain a private copy of the original.
+Recording-specific behavior remains separate from playback. The current player
+supports bundled resources and has no pause/progress API. Reuse useful player
+mechanics while adding the minimal local-asset resolution, pause/resume, duration,
+progress, and completion/error handling required here. Do not leak paths to screens
+or change the existing game playback contract unnecessarily.
+
+Pause preserves position; Play resumes it. Completion resets to zero. Starting
+another saved row resets/stops the previous row. Opening the recording modal stops
+saved-row playback; recording and preview/list playback never overlap. Leaving or
+backgrounding Sounds stops playback and releases resources. Handle audio-focus
+loss/interruption by stopping or pausing safely; do not resume automatically.
 
 ---
 
-## 10. Editing an Existing Photo
-
-Tapping a saved photo in the grid opens the same editor directly.
-
-The source is the currently stored:
-
-```text
-1024 × 1024 WebP
-```
-
-When Save is pressed:
-
-- keep the same photo/media ID;
-- preserve creation time and grid position;
-- produce a new 1024 × 1024 WebP;
-- replace the previous processed file;
-- keep references from future game content stable.
-
-Do not create a second library item merely because an existing photo was edited.
-
-If the selected region is unchanged, Save simply closes the editor without
-rewriting the image, changing metadata, or introducing another lossy encode.
-
-Use a safe replacement strategy so a failed encode/write cannot destroy the existing image.
-
-Conceptually:
-
-```text
-existing.webp
-      ↓
-edit
-      ↓
-write temporary file
-      ↓
-success?
-   ├── yes → replace existing.webp
-   └── no  → keep existing.webp untouched
-```
-
-Serialize replacement with saves, deletion, and reconciliation. Validate and
-finish the temporary output before replacing the current file; never delete or
-truncate the previous image first. Recovery after process interruption must
-leave a complete valid old or new version, with the same stable ID, and clean
-up incomplete temporary/backup files safely. A failed replacement keeps the
-previous photo intact and leaves the editor open for explicit retry.
-
-After success, publish the changed image and refresh grid thumbnails and future
-editor loads immediately. The current renderer reloads by asset ID only; the
-replacement path must invalidate stale image state without changing the photo ID.
-
-Delete is available only for a saved photo. It removes that Library record and
-its owned image, discards any unsaved edits, and returns to Photos. Preserve the
-existing deletion recovery behavior; never delete the gallery original or
-bundled artwork. A failure keeps the editor open with a friendly retry message.
-
----
-
-## 11. Cancel / Back
-
-Tapping the backdrop or the top-right **X**, or pressing system Back, returns
-without saving changes.
-
-System Back behaves the same way.
-
-For a newly selected image:
-
-```text
-Cancel
-→ discard temporary selection
-→ Photos
-```
-
-For an existing image:
-
-```text
-Cancel
-→ keep existing image unchanged
-→ Photos
-```
-
-No confirmation dialog is required if no persistent change has happened yet.
-
-While Save or Delete is in progress, disable and guard all conflicting actions,
-including Back/Cancel/X and further gestures. Accept at most one operation;
-rapid taps and activity recreation must not duplicate Save/Delete or navigation.
-After failure, preserve the edit and allow an explicit retry once cleanup finishes.
-
----
-
-## 12. Editor State
-
-The editor should conceptually maintain:
-
-```text
-source image
-crop viewport size
-minimum scale
-current scale
-maximum scale
-translation X
-translation Y
-```
-
-The transformation state is UI/editor state.
-
-Do not write a new bitmap to disk while the parent is dragging or zooming.
-
-Generate the final bitmap only when Save is pressed.
-
-Preserve the temporary source, selected source region, zoom, and any in-progress
-operation across activity rotation. Store crop coordinates relative to the
-source rather than raw screen pixels; keep bitmap work off the main thread and
-bitmaps out of saved-state bundles. Recalculate layout bounds without resetting
-the crop or saving automatically.
-
-After process death, reopen Photos without restoring or saving unsaved edits.
-For saved-photo edits, keep the stored version unchanged unless Save or Delete
-had already committed; reconcile interrupted operations before exposing Library content.
-Do not automatically retry an interrupted Save or Delete.
-
----
-
-## 13. Transformation Constraints
-
-Every time scale or translation changes:
-
-1. calculate the transformed bounds of the image;
-2. ensure those bounds completely contain the crop square;
-3. clamp invalid translation;
-4. clamp scale between minimum and maximum.
-
-This rule must hold continuously during interaction.
-
-The crop viewport must never expose the background.
-
----
-
-## 14. Image Quality
-
-### New gallery image
-
-Use enough source resolution to produce a high-quality final:
-
-```text
-1024 × 1024
-```
-
-Avoid unnecessarily loading huge full-resolution camera bitmaps into memory.
-
-Choose bounded decoding appropriate to the crop, output resolution, and up to
-4× zoom, rather than reusing the previous 1024-only decode target. Preserve the
-uncropped aspect ratio and EXIF orientation. Do not promise additional detail
-that a small source does not contain or archive originals for later editing.
-
-### Existing image
-
-The available source is already 1024 × 1024.
-
-If the parent zooms into it and saves again, some quality reduction is expected.
-
-This tradeoff is intentional because Puzzle Bubbles does not retain original gallery files.
-
-Do not introduce an original-image archive solely to avoid this limitation.
-
----
-
-## 15. Reuse
-
-Use the **same image editor implementation** for:
-
-```text
-new gallery image
-existing library image
-```
-
-Do not build separate crop UIs for these cases.
-
-The difference should only be:
-
-```text
-input source
-+
-save behavior
-```
-
----
-
-## 16. No External Crop Library Required
-
-For this version, do not introduce an external image-cropping library unless implementation reveals a concrete blocker.
-
-The required functionality is deliberately small:
-
-- fixed 1:1 viewport;
-- pan;
-- pinch zoom;
-- constrained bounds;
-- render final crop.
-
-Compose already provides the gesture and transformation primitives required for the interactive portion.
-
-Keeping this custom also allows the editor to visually match Puzzle Bubbles instead of embedding a generic third-party crop screen.
-
----
-
-## 17. Explicitly Out of Scope
-
-Do not add:
-
-- movable crop rectangle;
-- resize handles;
-- different aspect ratios;
-- free-form crop;
-- image rotation;
-- flip/mirror;
+## 20. Explicitly Out of Scope
+
+Do not implement in this feature phase:
+
+- selecting an existing audio file from the device;
+- audio trimming;
+- waveform visualization;
+- waveform generation;
+- seeking;
+- renaming saved sounds;
+- editing an existing recording;
+- replacing an existing recording;
+- re-recording;
+- sound categories;
+- transcription;
+- noise reduction;
 - filters;
-- brightness/contrast controls;
-- automatic face/object detection;
-- undo history;
-- original-photo storage;
-- arbitrary output dimensions;
-- multi-image editing.
+- cloud upload;
+- backend synchronization;
+- associating sounds with custom games.
 
 ---
 
-## 18. Acceptance Criteria
+## Persistence, Documentation, and Verification
 
-The image editor is complete when:
+File writes and Room transactions are not atomic together. Stage a valid recording,
+then publish its permanent file and metadata through serialized Save/reconciliation.
+On ordinary failure, remove incomplete output and retain a valid temporary preview
+for explicit retry where possible. Reconcile interrupted saves before listing items:
+preserve committed valid files; clean temporary/orphaned files and invalid metadata.
+Never duplicate entries or automatically retry interrupted mutations.
 
-1. Selecting a new photo opens the editor before saving it.
-2. The editor displays a fixed centered square crop area.
-3. The area outside the crop square is visibly darkened.
-4. The area inside the crop square shows the image at normal brightness.
-5. A newly selected image initially uses a centered crop.
-6. Saving a new photo without interaction produces the current center-crop composition, without requiring byte-identical encoding.
-7. The image can be dragged with one finger.
-8. The image can be zoomed using a two-finger pinch.
-9. Pan and zoom can occur naturally in the same interaction.
-10. Rotation gestures do not rotate the image.
-11. Zoom cannot go below the minimum required to cover the crop square.
-12. Zoom is limited to a reasonable maximum.
-13. Panning cannot expose an empty area inside the crop square.
-14. The crop square has no user move/resize controls; layout changes preserve the selected source region.
-15. Save produces exactly the region visible in the crop square.
-16. Saved output remains exactly 1024 × 1024.
-17. Saved output uses the existing WebP storage pipeline.
-18. Cancel does not persist any changes.
-19. System Back behaves like Cancel except while Save/Delete is committing.
-20. Tapping a saved photo opens the same editor directly, with Delete/Save at the bottom and X at the top right.
-21. Editing an existing photo keeps its stable media ID.
-22. Saving an edit safely replaces the existing processed image.
-23. Failure while replacing an image does not destroy the previous version.
-24. The original gallery image is not retained after a new photo is saved.
-25. Existing Library and game functionality remains unaffected.
-26. Saving an unchanged existing photo closes without rewriting files or metadata.
-27. Editing preserves creation time and grid position, and successful replacement refreshes thumbnails immediately.
-28. Interrupted replacements recover a complete old or new version without losing the photo or changing its ID.
-29. Rotation preserves the crop and busy operation; rapid actions cannot duplicate Save/Delete or navigation.
-30. Process death discards unsaved edits without automatically retrying an operation.
-31. Failed Save/Delete remains recoverable through an explicit retry with a friendly error.
-32. New photos have a full-width Save button without Cancel or Delete; X cancels without saving. Saved-photo X cancels without changing the stored image.
-33. Saved-photo Delete removes only that Library item, and deleting the last photo restores the empty state.
+Store recordings under `filesDir/library/audio/<id>.m4a`, separate from bundled
+assets. Temporary files stay in an app-owned draft/staging location and are cleaned
+on cancel, failure, and startup recovery, without deleting a live draft on rotation.
+Verify cloud-backup and device-transfer rules exclude audio files and their Room
+metadata together, following Photos. Bundled source/runtime conventions do not change.
+
+The following documentation and configuration work is required in this current
+sound-recording feature phase of Iteration 2, not deferred to another phase:
+
+- Extend `docs/mvp-spec.md` with parent-recorded audio and the Sounds modal flow.
+- Extend `docs/content-assets.md` with private user-recording storage at
+  `filesDir/library/audio/<id>.m4a`, stable IDs, metadata, and recovery conventions.
+  Preserve all bundled audio source/runtime conventions.
+- Verify and update backup rules where needed so private recording files and
+  their metadata are excluded together from cloud backup and device transfer;
+  document those exclusions. Existing exclusions may already cover the paths.
+- Document that fixed Home/Library navigation remains visible on Sounds and is
+  covered and non-interactive underneath the recording modal.
+
+Permanent docs and README must not claim recording exists before it is verified.
+Reconcile the phase only on explicit `$finalize-feature`; do not open a new
+iteration or close Iteration 2 automatically.
+
+Add focused verification using existing tooling:
+
+- State/clock tests for permission handling, stale callbacks, manual/automatic Stop,
+  one finalization per session, short/invalid recordings, and the five-second limit.
+- Rotation preserves recording deadline, preview, and mutations; backgrounding and
+  process death discard unsaved work without saving or restarting anything.
+- Rapid and conflicting actions cannot create duplicate recorders, players, saves,
+  deletion requests, or navigation. X/Back/backdrop and busy guards behave consistently.
+- Save/delete failures, file/metadata mismatches, and process interruption recover
+  idempotently; migration preserves existing Photos; restart retains valid sounds.
+- Pause/resume, progress, completion reset, row switching, modal opening, and leaving
+  the screen maintain one player and release resources correctly.
+- Empty/list states, permission denial/settings route, confirmation, retry messages,
+  and representative Compose previews use no real microphone/storage in previews.
+- Build, unit tests, lint, affected device tests, and Photos/game regressions.
+
+Manually verify microphone recording, immediate Stop, five-second auto-stop,
+permission denial, rotation/backgrounding, playback, Save/Delete, and restart on a
+physical device. Mocks/emulator UI checks do not establish real microphone or codec
+behavior. Report unavailable checks accurately and preserve known prior test failures
+for investigation rather than treating them as passed.
+
+---
+## 21. Acceptance Criteria
+
+The feature is complete when:
+
+1. Sounds has a `+` / Add Sound action in its header.
+2. Pressing Add Sound opens the recording modal.
+3. Opening the modal itself does not request microphone permission.
+4. Pressing Record requests microphone permission when necessary.
+5. Permission denial does not crash or leave the modal unusable.
+6. Granting permission starts recording.
+7. Recording state visibly indicates that the microphone is active.
+8. A visible timer updates while recording.
+9. Recording can be stopped manually.
+10. Recording automatically stops at five seconds.
+11. The recorder and UI deadline remain 5,000 ms; finalized output allows at most 100 ms of native overhead (5,100 ms total), with actual duration preserved and longer output rejected.
+12. Recording creates only a temporary file until Save.
+13. After stopping, the modal enters Preview state.
+14. The temporary recording can be played and paused.
+15. Preview shows a playback progress line.
+16. Preview shows recording duration.
+17. No waveform is generated.
+18. Cancel deletes the temporary recording and closes the modal.
+19. `X` behaves as Cancel.
+20. Save persists the recording as an app-owned audio file.
+21. Saved audio uses MPEG-4/AAC (`.m4a`).
+22. Binary audio is not stored in Room.
+23. Saved metadata survives application restart.
+24. The new recording appears immediately in the Sounds list.
+25. Each saved recording can be played from its list row.
+26. Playback progress is shown while a saved sound plays.
+27. Only one sound can play at a time.
+28. Leaving Sounds stops active playback.
+29. Each recording has a Delete action.
+30. Delete removes both the audio file and its persistent metadata.
+31. Existing recordings do not have an Edit action.
+32. Closing/abandoning an unsaved recording leaves no temporary files behind.
+33. Recorder and player resources are released correctly.
+34. Recording failures do not create invalid library entries.
+35. Existing Photos and game functionality remain unaffected.
+36. The project builds and relevant tests pass.
+37. Rotation preserves active work/deadline; backgrounding discards unsaved work and process death restores Sounds without a draft or automatic action.
+38. Rapid/conflicting taps and stale callbacks cannot duplicate recorder/player instances or persistent operations.
+39. Save/delete recovery and the additive Room migration preserve valid content, including existing Photos.
+40. Fixed Home/Library navigation stays visible on Sounds, with Library selected; the modal covers and blocks it. Back/backdrop match X outside committing operations.
+41. Playback completion resets to zero, and recording never overlaps preview or saved-row playback.
+42. This phase includes scoped MVP/asset documentation for private recordings and verified backup exclusions for files and metadata, preserving bundled conventions. Meaningful previews accompany the feature; Iteration 2 remains open until explicitly finished.
+43. Preview offers a selected `Track N` name default based on saved count + 1; custom and duplicate names persist and appear in rows. Blank input falls back to the draft's default, and names survive rotation and failed Saves.
+44. Existing unnamed recordings receive default names through a migration preserving Photos, sound IDs, metadata, and audio files. Saved recordings cannot be renamed yet.
 
 ---
 
-## 19. Focused Verification
+## Expected Result of This Feature Phase
 
-Add focused tests for:
-
-- Minimum/maximum zoom, pan clamping, source-to-viewport crop conversion, and
-  combined pan/zoom for landscape, portrait, square, and small images.
-- EXIF rotation/mirroring, initial center-crop composition, and preview/export
-  agreement at viewport edges and maximum zoom. Output stays 1024 × 1024 WebP.
-- Rotation and viewport resizing preserve the selected source region; process
-  death discards unsaved changes without mutating the saved photo.
-- Direct saved-photo entry, new versus saved controls, Cancel/Back/X, and Delete.
-  Underlying Photos and bottom navigation remain blocked during editing.
-- Rapid Save/Delete, conflicting close actions, and recreation during operations
-  result in one operation and one return to Photos.
-- Unchanged saved-photo Save preserves bytes and metadata. Changed Save retains
-  ID/creation time/order, replaces the image, and refreshes thumbnails and re-editing.
-- Encode/write/replace/cleanup failures and process interruption around replacement;
-  reconciliation is repeatable and preserves a complete old or new image.
-- Existing import, deletion/recovery, Library navigation, and game regression tests.
-
-Manually check drag/pinch behavior and crop/output agreement using representative
-images, including small screens, enlarged text, and rotation. Exercise Save,
-re-edit, Cancel, deletion, errors, and restart recovery. Run the debug build,
-unit tests, lint, and relevant device tests; do not add screenshot infrastructure.
-
----
-
-## Result
-
-The parent now controls exactly which part of a personal photo becomes Puzzle Bubbles content:
+A parent can complete the entire recording workflow:
 
 ```text
-choose photo
-     ↓
-center crop appears
-     ↓
-drag + pinch
-     ↓
-preview exactly what will be kept
-     ↓
+Sounds
+   ↓
++
+   ↓
+Record
+   ↓
+up to 5 seconds
+   ↓
+Stop / automatic stop
+   ↓
+Play preview
+   ↓
 Save
-     ↓
-1024 × 1024 library image
+   ↓
+▶ ───────────── duration  🗑
 ```
 
-This phase also supports re-editing a previously edited photo through the same
-editor. Each edit starts from the currently stored normalized image; no original
-gallery image or edit history is retained.
+Sounds contains persistent parent-created recordings. Associating them with
+custom games remains outside this feature.
