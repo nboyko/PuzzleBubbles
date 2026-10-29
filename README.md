@@ -113,13 +113,16 @@ commands, not claims that the current checkout has passed every check.
 ## Requirements and iteration workflow
 
 - [MVP specification](docs/mvp-spec.md): intended product requirements.
-- [Current plan](docs/plan.md): next agreed feature and acceptance criteria.
+- [Current plan](docs/plan.md): agreed feature scope and acceptance criteria when a plan is needed.
 - [Iteration 1](docs/iterations/001-iteration.md): completed Home and What's That? milestone.
 - [Iteration 2](docs/iterations/002-iteration.md): Library functionality and verified phases.
 - [AGENTS.md](AGENTS.md): project rules and explicit `$finalize-feature` workflow.
 
 Finalization runs only when explicitly invoked. It verifies functionality against
-the current plan, synchronizes affected documentation, reconciles the iteration
-record, and commits those changes together unless review only is requested.
-Regular coding tasks and commits do not trigger it. Update the plan for the next
-agreed feature afterward; iteration records do not require Git metadata.
+the agreed scope (an explicit request or the current plan), synchronizes affected
+documentation, reconciles the iteration record, and commits those changes together
+unless review only is requested.
+Regular coding tasks and commits do not trigger it. Small, clearly specified
+improvements can be recorded directly in their iteration phase without a feature
+plan. Iteration records describe verified functionality and limitations, without
+backlog sections or Git metadata.

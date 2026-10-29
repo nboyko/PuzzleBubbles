@@ -108,10 +108,13 @@ summarize the work in the response instead.
 ### Documentation and finalization
 
 - Iterations are functional milestones, not Git commits. `docs/iterations/`
-  holds brief descriptions of verified functionality and remaining milestone work.
-- `docs/plan.md` defines the agreed next step and acceptance criteria. Finalization
-  compares implementation against this plan; update it for the next feature only
-  after the current verified plan has been committed.
+  holds brief descriptions of verified functionality, verification, and known limitations.
+- `docs/plan.md` defines the agreed next step and acceptance criteria when a plan
+  is needed. Small, clearly specified improvements may use the explicit user
+  request as scope without creating a feature plan; record the verified result
+  in the respective iteration phase. Finalization compares implementation against
+  the applicable agreed scope. When a plan is used, update it for the next feature
+  only after the current verified plan has been committed.
 - `README.md` describes implemented features and architecture;
   `docs/content-assets.md` holds asset conventions. Permanent documentation must
   reflect verified current behavior. `docs/mvp-spec.md` defines requirements,
@@ -136,9 +139,11 @@ summarize the work in the response instead.
   closed and do not reopen them automatically.
 - An iteration remains in progress until the user explicitly says it is finished.
   Completed implementation, passing tests, or a commit do not close an iteration.
-- On explicit finalization, reconcile the plan into a brief description of
-  verified working functionality. Preserve unfinished requirements separately in
-  the appropriate upcoming iteration; do not silently discard or expand them.
+- On explicit finalization, record a brief description of verified working
+  functionality. Product requirements stay in `docs/mvp-spec.md`; future agreed
+  feature plans belong in `docs/plan.md`. Do not add Remaining work, Upcoming work,
+  or backlog sections to iteration records. Keep verification limitations with
+  the respective phase; do not silently discard or expand product requirements.
 - Each successfully finalized feature step adds a concise functional phase to
   the selected iteration, defaulting to the latest existing iteration file.
   Preserve previous phases and update an existing phase when re-finalizing the

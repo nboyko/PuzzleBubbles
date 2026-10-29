@@ -100,10 +100,3 @@ tests, and all 16 Sounds tests after the landscape fix. Lint has zero errors and
 18 warnings. Portrait/landscape screens were rendered and inspected on the emulator,
 and Add Record opened the idle modal. Existing previews compiled; IDE rendering
 and physical-device verification of this change remain unverified.
-
-## Remaining work
-
-The photo crop editor still has no separately finalized phase. Custom-photo
-gameplay, audio import, saved-sound editing, and custom-game audio association
-remain outside these verified phases. No next feature is defined here; agree it in
-[the plan](../plan.md) separately. Iteration closure requires explicit user confirmation.
