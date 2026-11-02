@@ -9,7 +9,7 @@ class LocalGameRepositoryTest {
     @Test
     fun catalogContainsTheTwoMvpGamesInOrder() {
         val games = LocalGameRepository().getGameCatalog()
-        assertEquals(listOf("choose-it", "matching"), games.map { it.id })
+        assertEquals(listOf("whats-that", "matching"), games.map { it.id })
         assertEquals(listOf("What's That?", "Match Up"), games.map { it.title })
         assertEquals(listOf(GameType.CHOOSE_IT, GameType.MATCHING), games.map { it.type })
         assertEquals(listOf("choose-it-cover", "matching-cover"), games.map { it.coverImageAssetId })
@@ -17,8 +17,18 @@ class LocalGameRepositoryTest {
     }
 
     @Test
+    fun selectionContainsOnlyTheLoadableDefaultGame() {
+        val repository = LocalGameRepository()
+        val entries = repository.getChooseItGames()
+        assertEquals(listOf("whats-that"), entries.map { it.id })
+        assertEquals(listOf("Animals"), entries.map { it.name })
+        assertEquals(listOf(true), entries.map { it.isBuiltIn })
+        entries.forEach { assertEquals(it.id, repository.getChooseItGame(it.id).id) }
+    }
+
+    @Test
     fun chooseItPresetContainsTenCompleteUniqueItems() {
-        val game = LocalGameRepository().getChooseItGame("choose-it")
+        val game = LocalGameRepository().getChooseItGame("whats-that")
 
         assertEquals(10, game.items.size)
         assertEquals(10, game.items.map { it.id }.distinct().size)

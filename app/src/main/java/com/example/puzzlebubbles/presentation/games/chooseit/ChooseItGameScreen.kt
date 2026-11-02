@@ -442,7 +442,7 @@ private fun GameBubbleBackdrop(modifier: Modifier = Modifier) {
 private fun ChooseItPreviewContent(phase: ChooseItPhase) {
     val round = remember {
         ChooseItSessionFactory(kotlin.random.Random(0))
-            .create(LocalGameRepository().getChooseItGame("choose-it")).rounds.first()
+            .create(LocalGameRepository().getChooseItGame("whats-that")).rounds.first()
     }
     val silentAudio = remember {
         object : AudioPlayer {

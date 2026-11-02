@@ -7,6 +7,9 @@ This overview describes the current checkout, not iteration acceptance.
 
 - Home shows image cards for **What's That?** (Choose It) and **Match Up**
   (Matching), with Baloo 2 headings and Lilita One card titles.
+- What's That? opens a game list containing the predefined **Animals** game.
+  Play opens the existing game; gameplay Back returns to selection and completion
+  returns Home. The list supports multiple repository entries; Add Game is disabled.
 - Home and My Library share a fixed bottom navigation bar with labeled icons
   and a raised bubble around the active icon. There are no top tabs.
 - My Library has Photos and Sounds destinations with Back to My Library and

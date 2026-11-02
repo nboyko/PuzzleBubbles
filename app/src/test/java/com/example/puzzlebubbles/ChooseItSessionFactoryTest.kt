@@ -9,7 +9,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ChooseItSessionFactoryTest {
-    private val game = LocalGameRepository().getChooseItGame("choose-it")
+    private val game = LocalGameRepository().getChooseItGame("whats-that")
 
     @Test
     fun sessionUsesEveryTargetExactlyOnceWithTwoExplicitChoices() {

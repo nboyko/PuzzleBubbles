@@ -99,8 +99,10 @@ The data layer is responsible for resolving these IDs to their current physical 
 ## 4. Navigation
 
 The Figma home design uses the child-facing names **What's That?** for Choose It
-and **Match Up** for Matching. These are display names only: mechanic types and
-stable catalog IDs (`choose-it`, `matching`) remain unchanged. The home uses the
+and **Match Up** for Matching. The mechanic types remain distinct. The agreed
+Game Selection feature changes the What's That? built-in game/catalog ID from
+`choose-it` to `whats-that`; Match Up retains `matching`. Display names and asset
+IDs such as `choose-it-cover` are independent of those game IDs. The home uses the
 corresponding `game-covers` artwork as card backgrounds with colored title bars.
 Home and Library use a fixed, full-width bottom navigation bar without top tabs
 or a floating container. Icons have small, matching-color labels underneath;
@@ -200,7 +202,34 @@ Each item is represented by a large child-friendly card with:
 - title;
 - cover image.
 
-Selecting a card opens that game directly.
+Selecting What's That? opens its Game Selection screen. Selecting the built-in
+**Animals** row starts existing gameplay. Match Up continues to open directly.
+The selection screen has no header, title, or header Back arrow. It uses the fixed
+Home/Library bottom navigation, with Home selected. Home returns to Home; Library
+opens My Library without leaving an extra selection destination behind it.
+A filled circular Add Game plus button floats at the bottom right above navigation,
+with list padding so it cannot cover the last row. It remains disabled and is
+described accessibly as "Add Game — coming soon" until creation is implemented.
+
+The repository supplies the list and explicitly identifies the built-in entry.
+That row uses a slightly tinted background and bold accent-colored text. Other
+entries use white backgrounds and regular-weight text. Use the existing puzzle
+and Play assets for every row. Only the predefined Animals entry is required now;
+additional predefined games may be added later. Custom examples belong only in
+previews and tests.
+
+Selection system Back returns to Home. Gameplay's Back arrow and system
+Back return to the previous selection screen. Automatic game completion retains
+its existing timing/audio and returns to Home, removing gameplay and selection
+from the back stack. Guard repeated Play taps and preserve destinations through
+activity recreation. Opening selection does not play gameplay audio; leaving
+gameplay stops audio and pending work, and starting again creates a fresh session.
+
+The built-in game has ID `whats-that`. Future custom games use
+`whats-that-<unique suffix>`, generated once and retained through edits; random UUID
+suffixes are recommended rather than hashes of mutable names or content.
+Custom-game creation, persistence, editing, and gameplay remain outside this
+navigation feature.
 
 Navigation:
 
@@ -208,7 +237,8 @@ Navigation:
 HomeScreen
 │
 ├── Choose It
-│   └── ChooseItGameScreen
+│   └── WhatsThatGameSelection
+│       └── ChooseItGameScreen
 │
 └── Matching
     └── MatchingGameScreen
@@ -549,7 +579,7 @@ enum class GameType {
 Initial catalog:
 
 ```text
-choose-it
+whats-that
 matching
 ```
 
@@ -705,7 +735,7 @@ Do not implement yet:
 - content categories;
 - content topics;
 - sound-type categories;
-- intermediate content-selection screens;
+- additional content-selection screens beyond the What's That? game list;
 - complex animation framework.
 
 Do not build abstractions solely for these future features.
@@ -732,7 +762,7 @@ The first usable version is complete when:
 1. The app launches into the game list.
 2. The list contains Choose It and Matching.
 3. Each game has a title and cover image.
-4. Choose It opens directly into gameplay.
+4. Choose It opens Game Selection, where the Animals row starts built-in gameplay.
 5. Matching opens directly into gameplay.
 6. Choose It supports multiple local rounds.
 7. Each Choose It round can play and replay one supplied audio asset.

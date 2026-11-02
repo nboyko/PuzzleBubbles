@@ -34,7 +34,7 @@ class ChooseItGestureTest {
 
     @Before fun setup() {
         compose.mainClock.autoAdvance = false
-        model = ChooseItViewModel(LocalGameRepository().getChooseItGame("choose-it"),
+        model = ChooseItViewModel(LocalGameRepository().getChooseItGame("whats-that"),
             ChooseItSessionFactory(Random(0)))
         compose.setContent {
             PuzzleBubblesTheme {

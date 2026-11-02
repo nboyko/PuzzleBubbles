@@ -30,6 +30,9 @@
     <string name="photo_delete_error">Couldn\'t finish deleting this photo. Please try again.</string>
     <string name="add_sound">Add Sound</string>
     <string name="add_record">Add Record</string>
+    <string name="add_game_coming_soon">Add Game — coming soon</string>
+    <string name="play_game">Play %1$s</string>
+    <string name="whats_that_games">What\'s That? games</string>
     <string name="record_sound">Record Sound</string>
     <string name="record">Record</string>
     <string name="stop_recording">Stop</string>

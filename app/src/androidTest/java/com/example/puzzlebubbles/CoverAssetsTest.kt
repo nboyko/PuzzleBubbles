@@ -31,7 +31,7 @@ class CoverAssetsTest {
     @Test
     fun everyChooseItItemHasRuntimeImageAndAudio() {
         val resources = InstrumentationRegistry.getInstrumentation().targetContext.resources
-        for (item in LocalGameRepository().getChooseItGame("choose-it").items) {
+        for (item in LocalGameRepository().getChooseItGame("whats-that").items) {
             val bitmap = BitmapFactory.decodeResource(
                 resources,
                 LocalImageAssetResolver.resolveImage(item.imageAssetId),

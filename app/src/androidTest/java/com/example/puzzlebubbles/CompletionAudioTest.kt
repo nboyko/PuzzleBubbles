@@ -84,7 +84,7 @@ class CompletionAudioTest {
         returnsHome: AtomicInteger,
         visible: androidx.compose.runtime.MutableState<Boolean> = mutableStateOf(true),
     ) {
-        val rounds = ChooseItSessionFactory().create(LocalGameRepository().getChooseItGame("choose-it")).rounds
+        val rounds = ChooseItSessionFactory().create(LocalGameRepository().getChooseItGame("whats-that")).rounds
         val state = ChooseItUiState(
             round = rounds.last(), roundNumber = 10, roundCount = 10,
             phase = ChooseItPhase.GAME_COMPLETE, feedbackChoiceId = null, audioRequestId = 10,

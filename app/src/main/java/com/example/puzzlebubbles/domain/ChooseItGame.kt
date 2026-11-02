@@ -2,6 +2,8 @@ package com.example.puzzlebubbles.domain
 
 data class ChooseItGame(val id: String, val title: String, val items: List<ChooseItItem>)
 
+data class ChooseItGameSummary(val id: String, val name: String, val isBuiltIn: Boolean = false)
+
 data class ChooseItItem(
     val id: String,
     val imageAssetId: String,

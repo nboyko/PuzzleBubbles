@@ -11,7 +11,7 @@ import org.junit.Test
 class ChooseItSessionEngineTest {
     private fun engine() = ChooseItSessionEngine(
         ChooseItSessionFactory(Random(11)).create(
-            LocalGameRepository().getChooseItGame("choose-it"),
+            LocalGameRepository().getChooseItGame("whats-that"),
         ),
     )
 

@@ -41,6 +41,8 @@ class HomeNavigationTest {
         openGame("What's That?")
         compose.onNodeWithContentDescription("Replay sound").assertIsDisplayed()
         compose.onNodeWithContentDescription("Back").performClick()
+        compose.onNodeWithTag("whats-that-selection").assertIsDisplayed()
+        compose.onNodeWithText("Home").performClick()
         assertHome()
 
         openGame("Match Up")
@@ -54,6 +56,10 @@ class HomeNavigationTest {
         for (title in listOf("What's That?", "Match Up")) {
             openGame(title)
             pressBack()
+            if (title == "What's That?") {
+                compose.onNodeWithTag("whats-that-selection").assertIsDisplayed()
+                pressBack()
+            }
             assertHome()
         }
     }
@@ -71,6 +77,10 @@ class HomeNavigationTest {
                 compose.onNodeWithText("Game coming soon").assertIsDisplayed()
             }
             pressBack()
+            if (title == "What's That?") {
+                compose.onNodeWithTag("whats-that-selection").assertIsDisplayed()
+                pressBack()
+            }
             assertHome()
         }
     }
@@ -214,8 +224,12 @@ class HomeNavigationTest {
 
     private fun openGame(title: String) {
         compose.onNodeWithText(title).performScrollTo().performClick()
-        compose.onNodeWithText(title).assertIsDisplayed()
         if (title == "What's That?") {
+            compose.onNodeWithTag("whats-that-selection").assertIsDisplayed()
+            compose.onNodeWithTag("bottom-navigation").assertIsDisplayed()
+            compose.onNodeWithContentDescription("Replay sound").assertDoesNotExist()
+            compose.onNodeWithContentDescription("Play Animals").performClick()
+            compose.onNodeWithText(title).assertIsDisplayed()
             compose.onNodeWithContentDescription("Replay sound").assertIsDisplayed()
             compose.onNodeWithText("Game coming soon").assertDoesNotExist()
         } else {

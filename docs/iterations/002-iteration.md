@@ -1,6 +1,6 @@
 # Iteration 2: Library functionality
 
-Status: **In progress**. Phases 1–5 are verified; the full iteration is not finished
+Status: **In progress**. Phases 1–6 are verified; the full iteration is not finished
 until the user explicitly confirms it.
 
 ## Verified phases
@@ -100,3 +100,22 @@ tests, and all 16 Sounds tests after the landscape fix. Lint has zero errors and
 18 warnings. Portrait/landscape screens were rendered and inspected on the emulator,
 and Add Record opened the idle modal. Existing previews compiled; IDE rendering
 and physical-device verification of this change remain unverified.
+
+### Phase 6: feat What's That? game selection
+
+What's That? opens a repository-backed game list with the predefined Animals row,
+explicit built-in styling, puzzle/Play assets, fixed Home/Library navigation, and
+an accessible disabled Add Game button. Selected IDs reach gameplay. Gameplay
+Back returns to selection; completion returns Home and clears both destinations.
+Rapid Play is guarded, recreation retains progress, and exiting stops audio and
+pending feedback; replaying starts a fresh session. Match Up retains direct entry.
+
+Verified: debug build, 15 unit tests, six selection emulator tests and 22 affected
+Home navigation/audio/gesture/asset regressions (including a corrected ten-test
+Home navigation rerun), and lint with zero errors and 18 warnings. The initial
+emulator attempt could not install during boot; retry ran successfully. Obsolete
+Home test heading assertions were corrected for the headerless selection screen.
+Portrait and landscape with enlarged text were rendered and inspected on the
+Android 17 emulator. Single/multiple-row, landscape, and enlarged-text Compose
+previews compile; IDE preview rendering, physical-device checks, and subjective
+audio quality remain unverified. Custom games are not implemented.

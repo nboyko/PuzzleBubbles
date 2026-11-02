@@ -1,6 +1,7 @@
 package com.example.puzzlebubbles.presentation
 
 import android.app.Activity
+import android.net.Uri
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.safeDrawingPadding
@@ -9,6 +10,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
@@ -16,6 +18,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.puzzlebubbles.data.AudioPlayer
 import com.example.puzzlebubbles.domain.GameDefinition
@@ -23,6 +27,7 @@ import com.example.puzzlebubbles.domain.GameType
 import com.example.puzzlebubbles.domain.GameRepository
 import com.example.puzzlebubbles.presentation.games.chooseit.ChooseItGameScreen
 import com.example.puzzlebubbles.presentation.games.chooseit.ChooseItViewModel
+import com.example.puzzlebubbles.presentation.games.chooseit.WhatsThatGameSelectionScreen
 import com.example.puzzlebubbles.presentation.games.matching.MatchingGameScreen
 import com.example.puzzlebubbles.presentation.home.HomeScreen
 import com.example.puzzlebubbles.presentation.library.LibraryScreen
@@ -44,7 +49,7 @@ fun PuzzleBubblesApp(
     val backStackEntry by navController.currentBackStackEntryAsState()
     val view = LocalView.current
     val route = backStackEntry?.destination?.route ?: "home"
-    val lightSystemBars = route in listOf("home", "library", "library/photos", "library/sounds") || !isSystemInDarkTheme()
+    val lightSystemBars = route in listOf("home", "whats-that", "library", "library/photos", "library/sounds") || !isSystemInDarkTheme()
     SideEffect {
         (view.context as? Activity)?.window?.let { window ->
             WindowCompat.getInsetsController(window, view).apply {
@@ -62,10 +67,12 @@ fun PuzzleBubblesApp(
                     games = games,
                     onGameSelected = { game ->
                         val route = when (game.type) {
-                            GameType.CHOOSE_IT -> "choose-it"
+                            GameType.CHOOSE_IT -> "whats-that"
                             GameType.MATCHING -> "matching"
                         }
-                        navController.navigate(route) { launchSingleTop = true }
+                        if (navController.currentBackStackEntry?.destination?.route == "home") {
+                            navController.navigate(route) { launchSingleTop = true }
+                        }
                     },
                     modifier = Modifier.fillMaxSize(),
                     onLibrarySelected = { navController.navigate("library") { launchSingleTop = true } },
@@ -101,10 +108,32 @@ fun PuzzleBubblesApp(
                     modifier = Modifier.fillMaxSize(),
                 )
             }
-            composable("choose-it") {
+            composable("whats-that") {
+                val availableGames = remember(gameRepository) { gameRepository.getChooseItGames() }
+                WhatsThatGameSelectionScreen(
+                    games = availableGames,
+                    onPlay = { gameId ->
+                        if (navController.currentBackStackEntry?.destination?.route == "whats-that") {
+                            navController.navigate("choose-it/${Uri.encode(gameId)}") { launchSingleTop = true }
+                        }
+                    },
+                    onHome = { navController.popBackStack("home", inclusive = false) },
+                    onLibrary = {
+                        if (navController.currentBackStackEntry?.destination?.route == "whats-that") {
+                            navController.navigate("library") {
+                                popUpTo("home")
+                                launchSingleTop = true
+                            }
+                        }
+                    },
+                )
+            }
+            composable("choose-it/{gameId}", arguments = listOf(navArgument("gameId") { type = NavType.StringType })) { entry ->
                 val gameDefinition = games.single { it.type == GameType.CHOOSE_IT }
+                val gameId = requireNotNull(entry.arguments?.getString("gameId"))
+                val selectedGame = remember(gameRepository, gameId) { gameRepository.getChooseItGame(gameId) }
                 val chooseItViewModel: ChooseItViewModel = viewModel(
-                    factory = ChooseItViewModel.Factory(gameRepository.getChooseItGame(gameDefinition.id)),
+                    factory = ChooseItViewModel.Factory(selectedGame),
                 )
                 ChooseItGameScreen(
                     title = gameDefinition.title,
