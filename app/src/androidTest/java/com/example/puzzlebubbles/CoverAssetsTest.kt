@@ -29,9 +29,10 @@ class CoverAssetsTest {
     }
 
     @Test
-    fun everyChooseItItemHasRuntimeImageAndAudio() {
+    fun everyWhatsThatItemHasRuntimeImageAndAudio() {
         val resources = InstrumentationRegistry.getInstrumentation().targetContext.resources
-        for (item in LocalGameRepository().getChooseItGame("whats-that").items) {
+        val game = LocalGameRepository().getWhatsThatGame("whats-that")
+        for (item in game.imagePool) {
             val bitmap = BitmapFactory.decodeResource(
                 resources,
                 LocalImageAssetResolver.resolveImage(item.imageAssetId),
@@ -41,6 +42,8 @@ class CoverAssetsTest {
             assertTrue(bitmap.width in 1..512 && bitmap.height in 1..512)
             bitmap.recycle()
 
+        }
+        for (item in game.questions) {
             resources.openRawResource(LocalAudioAssetResolver.resolveAudio(item.audioAssetId)).use { audio ->
                 assertTrue(item.audioAssetId, audio.available() > 0)
             }

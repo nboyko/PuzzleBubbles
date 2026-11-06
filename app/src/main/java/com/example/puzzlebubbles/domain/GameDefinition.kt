@@ -8,6 +8,6 @@ data class GameDefinition(
 )
 
 enum class GameType {
-    CHOOSE_IT,
+    WHATS_THAT,
     MATCHING,
 }

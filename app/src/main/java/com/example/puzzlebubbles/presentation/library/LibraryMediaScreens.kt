@@ -319,6 +319,7 @@ private fun SoundErrorText(error: SoundError?) {
         SoundError.RECORD -> R.string.sound_record_error
         SoundError.SAVE -> R.string.sound_save_error
         SoundError.DELETE -> R.string.sound_delete_error
+        SoundError.IN_USE -> R.string.sound_in_use
         SoundError.CLEANUP -> R.string.sound_cleanup_error
         null -> return
     }

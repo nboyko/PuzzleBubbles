@@ -10,10 +10,10 @@ import com.example.puzzlebubbles.data.AudioPlayer
 import com.example.puzzlebubbles.data.LocalAudioAssetResolver
 import com.example.puzzlebubbles.data.LocalAudioPlayer
 import com.example.puzzlebubbles.data.LocalGameRepository
-import com.example.puzzlebubbles.domain.ChooseItPhase
-import com.example.puzzlebubbles.domain.ChooseItSessionFactory
-import com.example.puzzlebubbles.presentation.games.chooseit.ChooseItGameScreen
-import com.example.puzzlebubbles.presentation.games.chooseit.ChooseItUiState
+import com.example.puzzlebubbles.domain.WhatsThatPhase
+import com.example.puzzlebubbles.domain.WhatsThatSessionFactory
+import com.example.puzzlebubbles.presentation.games.whatsthat.WhatsThatGameScreen
+import com.example.puzzlebubbles.presentation.games.whatsthat.WhatsThatUiState
 import com.example.puzzlebubbles.ui.theme.PuzzleBubblesTheme
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
@@ -84,15 +84,15 @@ class CompletionAudioTest {
         returnsHome: AtomicInteger,
         visible: androidx.compose.runtime.MutableState<Boolean> = mutableStateOf(true),
     ) {
-        val rounds = ChooseItSessionFactory().create(LocalGameRepository().getChooseItGame("whats-that")).rounds
-        val state = ChooseItUiState(
+        val rounds = WhatsThatSessionFactory().create(LocalGameRepository().getWhatsThatGame("whats-that")).rounds
+        val state = WhatsThatUiState(
             round = rounds.last(), roundNumber = 10, roundCount = 10,
-            phase = ChooseItPhase.GAME_COMPLETE, feedbackChoiceId = null, audioRequestId = 10,
+            phase = WhatsThatPhase.GAME_COMPLETE, feedbackChoiceId = null, audioRequestId = 10,
         )
         compose.setContent {
             PuzzleBubblesTheme {
                 if (visible.value) {
-                    ChooseItGameScreen(
+                    WhatsThatGameScreen(
                         title = "What's That?", uiState = state, audioPlayer = player,
                         onAnswer = {}, onReplay = {}, onFeedbackFinished = {}, onBack = {},
                         onGameComplete = { returnsHome.incrementAndGet() },

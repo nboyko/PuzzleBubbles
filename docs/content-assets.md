@@ -50,8 +50,8 @@ nested icon folders without a concrete need.
 | `audio/sfx/` | UI/gameplay feedback sounds, separate from content data |
 
 Current source inventory: two PNG covers, the supplied completion background
-`images/game-covers/bubbles-bg.png`, 15 PNG gameplay images, fourteen SVGs (including
-the logo, Photos, close, plus, microphone, pause, stop, and delete icons), ten MP3 prompts in `audio/content/`, and the effects
+`images/game-covers/bubbles-bg.png`, 15 PNG gameplay images, fifteen SVGs (including
+the logo, Photos, close, plus, microphone, pause, stop, delete, and replace icons), ten MP3 prompts in `audio/content/`, and the effects
 `audio/sfx/pop.wav` and `audio/sfx/yay.mp3`. Preserve unreferenced
 gameplay source images; source inventory does not imply that every image is
 already packaged or used by a game.
@@ -87,14 +87,14 @@ unnecessary re-encoding or duplicate exports. Never change an extension without
 converting the actual format.
 
 The current runtime contains two WebP covers, ten 512px gameplay PNGs,
-the unchanged 887 × 1774 completion background `bubbles_bg.png`, fourteen UI/logo vectors,
+the unchanged 887 × 1774 completion background `bubbles_bg.png`, fifteen UI/logo vectors,
 ten `content_*.mp3` prompts, `sfx_pop.wav`, and `sfx_game_complete.mp3`. These
 format/size exceptions are intentional. Existing launcher assets remain in
 Android's drawable/mipmap folders.
 
 | Stable asset ID | Current source | Current runtime |
 | --- | --- | --- |
-| `choose-it-cover` | `images/game-covers/whats_that.png` | `drawable-nodpi/game_cover_whats_that.webp` |
+| `whats-that-cover` | `images/game-covers/whats_that.png` | `drawable-nodpi/game_cover_whats_that.webp` |
 | `matching-cover` | `images/game-covers/match_it_up.png` | `drawable-nodpi/game_cover_match_it_up.webp` |
 | `cat-image` | `images/gameplay/cat.png` | `drawable-nodpi/cat.png` |
 | `cat-audio` | `audio/content/cat.mp3` | `raw/content_cat.mp3` |
@@ -113,6 +113,7 @@ Android's drawable/mipmap folders.
 | `ui-stop` | `icons/stop.svg` | `drawable/ic_stop.xml` |
 | `ui-microphone` | `icons/microphone.svg` | `drawable/ic_microphone.xml` |
 | `ui-delete` | `icons/delete.svg` | `drawable/ic_delete.xml` |
+| `ui-replace` | `icons/replace.svg` | `drawable/ic_replace.xml` |
 | `ui-games` | `icons/games.svg` | `drawable/ic_games.xml` |
 | `ui-trophy` | `icons/trophy.svg` | `drawable/ic_trophy.xml` |
 
@@ -230,6 +231,19 @@ cannot resurrect the entry; subsequent reconciliation retries removal. Never
 delete bundled audio or unrelated files. Existing legacy-backup, cloud-backup,
 and device-transfer exclusions already cover the whole `library/` subtree and
 `photos.db` with its journal/WAL/SHM files, excluding recordings and metadata together.
+
+### Custom-game references
+
+Room schema version 4 adds `custom_games`, `game_images`, and `game_questions`
+through an additive 3 → 4 migration. A saved game stores its generated
+`whats-that-<UUID>` ID, name, creation time, ordered photo pool, and explicit
+question photo/sound IDs. Transactions commit these together; foreign keys and
+repository checks reject missing references and protect media from deletion.
+Game deletion releases only its metadata/references and keeps Library files.
+Referenced photos remain crop-editable with the same stable ID. No binary data,
+resource IDs, file paths, or duplicated media are stored in the game definition.
+The existing database and `library/` backup/transfer exclusions cover games and
+their media together.
 
 ### Bundled content
 

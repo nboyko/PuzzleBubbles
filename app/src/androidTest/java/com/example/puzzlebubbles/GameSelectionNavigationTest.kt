@@ -10,6 +10,8 @@ import com.example.puzzlebubbles.domain.*
 import com.example.puzzlebubbles.presentation.PuzzleBubblesApp
 import com.example.puzzlebubbles.ui.theme.PuzzleBubblesTheme
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.flow.MutableStateFlow
+import androidx.compose.ui.semantics.SemanticsProperties
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Rule
@@ -19,15 +21,32 @@ class GameSelectionNavigationTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
     private val base = LocalGameRepository()
     private val loadedIds = mutableListOf<String>()
+    private var loadGate: CompletableDeferred<Unit>? = null
+    private var deleteGate: CompletableDeferred<Unit>? = null
+    private var failDelete = false
+    private val deletedIds = mutableListOf<String>()
+    private val entries = MutableStateFlow(listOf(
+        WhatsThatGameSummary("whats-that", "Animals", isBuiltIn = true),
+        WhatsThatGameSummary("whats-that-test-fixture", "Another Game"),
+        WhatsThatGameSummary("whats-that-other-fixture", "Third Game"),
+    ))
     private val repository = object : GameRepository {
         override fun getGameCatalog() = base.getGameCatalog()
-        override fun getChooseItGames() = listOf(
-            ChooseItGameSummary("whats-that", "Animals", isBuiltIn = true),
-            ChooseItGameSummary("whats-that-test-fixture", "Another Game"),
-        )
-        override fun getChooseItGame(id: String): ChooseItGame {
+        override fun getWhatsThatGames() = entries.value
+        override fun observeWhatsThatGames() = entries
+        override suspend fun deleteCustomGame(id: String) {
+            deletedIds += id
+            deleteGate?.await()
+            check(!failDelete) { "Injected deletion failure" }
+            entries.value = entries.value.filterNot { it.id == id }
+        }
+        override fun getWhatsThatGame(id: String): WhatsThatGame {
             loadedIds += id
-            return base.getChooseItGame("whats-that").copy(id = id)
+            return base.getWhatsThatGame("whats-that").copy(id = id)
+        }
+        override suspend fun loadWhatsThatGame(id: String): WhatsThatGame {
+            loadGate?.await()
+            return getWhatsThatGame(id)
         }
     }
     private val audio = object : AudioPlayer {
@@ -71,10 +90,10 @@ class GameSelectionNavigationTest {
         settle()
     }
     private fun answerCorrectly() {
-        val items = base.getChooseItGame("whats-that").items
+        val items = base.getWhatsThatGame("whats-that").questions
         val lastPrompt = audio.requests.last { request -> items.any { it.audioAssetId == request } }
         val target = items.single { it.audioAssetId == lastPrompt }
-        compose.onNodeWithContentDescription(target.id).performClick()
+        compose.onNodeWithContentDescription(target.imageId).performClick()
     }
 
     @Test fun selectionHasBottomNavigationAndFloatingAddWithoutAHeader() {
@@ -82,17 +101,87 @@ class GameSelectionNavigationTest {
         compose.onNodeWithText("Animals").assertIsDisplayed()
         compose.onNodeWithText("Another Game").assertIsDisplayed()
         compose.onNodeWithTag("bottom-navigation").assertIsDisplayed()
+        compose.onNodeWithText("Home").assertIsNotSelected()
+        compose.onNodeWithText("Library").assertIsNotSelected()
         compose.onNodeWithContentDescription("Back").assertDoesNotExist()
         val navigation = compose.onNodeWithTag("bottom-navigation").fetchSemanticsNode().boundsInRoot
         val add = compose.onNodeWithTag("add-game-fab").fetchSemanticsNode().boundsInRoot
         assertTrue("The floating Add Game action must stay above navigation", add.bottom <= navigation.top)
-        compose.onNodeWithContentDescription("Add Game — coming soon").assertIsNotEnabled()
+        compose.onNodeWithContentDescription("Add Game").assertIsEnabled()
         compose.onNodeWithContentDescription("Replay sound").assertDoesNotExist()
         assertTrue(loadedIds.isEmpty())
         assertTrue(audio.requests.isEmpty())
         compose.onNodeWithText("Home").performClick()
         settle()
         compose.onNodeWithTag("home-content").assertIsDisplayed()
+    }
+
+    @Test fun asynchronousLoadingStartsOnePromptAfterTheEntryTransition() {
+        openSelection()
+        loadGate = CompletableDeferred()
+        compose.onNodeWithContentDescription("Play Animals").performClick()
+        compose.mainClock.advanceTimeBy(80)
+        compose.runOnIdle { loadGate!!.complete(Unit) }
+        compose.mainClock.advanceTimeByFrame()
+        compose.waitForIdle()
+        assertTrue("Do not play a prompt while the game entry animation is still running", audio.requests.isEmpty())
+        settle()
+        assertEquals("Opening a loaded game must play exactly one prompt", 1, audio.requests.size)
+        assertEquals(0, audio.stops)
+        compose.mainClock.advanceTimeBy(2000)
+        compose.waitForIdle()
+        assertEquals(1, audio.requests.size)
+        compose.onNodeWithContentDescription("Replay sound").performClick()
+        compose.mainClock.advanceTimeByFrame()
+        compose.waitForIdle()
+        assertEquals(2, audio.requests.size)
+    }
+
+    @Test fun deleteMarksOnlyTheTargetRowAndGuardsRepeatedConfirmation() {
+        openSelection()
+        val pending = SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Pending deletion")
+        compose.onNodeWithContentDescription("Delete game Another Game").performClick()
+        settle()
+        compose.onAllNodes(pending).assertCountEquals(1)
+        compose.onNodeWithTag("game-row-whats-that-test-fixture").assert(pending)
+        compose.onNodeWithTag("game-row-whats-that").assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.StateDescription))
+        compose.onNodeWithTag("game-row-whats-that-other-fixture").assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.StateDescription))
+        compose.onNodeWithText("Cancel").performClick()
+        settle()
+        compose.onAllNodes(pending).assertCountEquals(0)
+        deleteGate = CompletableDeferred()
+        compose.onNodeWithContentDescription("Delete game Another Game").performClick()
+        settle()
+        compose.onNodeWithText("Delete").performTouchInput { repeat(3) { click() } }
+        settle()
+        compose.onNodeWithText("Delete").assertIsNotEnabled()
+        compose.onAllNodes(pending).assertCountEquals(1)
+        assertEquals(listOf("whats-that-test-fixture"), deletedIds)
+        assertTrue(audio.requests.isEmpty())
+        compose.runOnIdle { deleteGate!!.complete(Unit) }
+        settle()
+        compose.onNodeWithTag("game-row-whats-that-test-fixture").assertDoesNotExist()
+        compose.onNodeWithText("Third Game").assertIsDisplayed()
+        compose.onAllNodes(pending).assertCountEquals(0)
+    }
+
+    @Test fun failedDeletionRetainsTheGameAndAllowsExplicitRetry() {
+        openSelection()
+        failDelete = true
+        compose.onNodeWithContentDescription("Delete game Another Game").performClick()
+        settle()
+        compose.onNodeWithText("Delete").performClick()
+        settle()
+        compose.onNodeWithText("Couldn't delete this game. Please try again.").assertIsDisplayed()
+        compose.onNodeWithText("Delete").assertIsEnabled()
+        compose.onNodeWithTag("game-row-whats-that-test-fixture").assertExists()
+        assertTrue(audio.requests.isEmpty())
+        failDelete = false
+        compose.onNodeWithText("Delete").performClick()
+        settle()
+        compose.onNodeWithTag("game-row-whats-that-test-fixture").assertDoesNotExist()
+        compose.onNodeWithText("Third Game").assertIsDisplayed()
+        assertEquals(List(2) { "whats-that-test-fixture" }, deletedIds)
     }
 
     @Test fun libraryNavigationReplacesSelectionWithoutAnExtraBackDestination() {

@@ -1,22 +1,22 @@
 package com.example.puzzlebubbles
 
 import com.example.puzzlebubbles.data.LocalGameRepository
-import com.example.puzzlebubbles.domain.ChooseItSessionFactory
+import com.example.puzzlebubbles.domain.WhatsThatSessionFactory
 import kotlin.random.Random
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-class ChooseItSessionFactoryTest {
-    private val game = LocalGameRepository().getChooseItGame("whats-that")
+class WhatsThatSessionFactoryTest {
+    private val game = LocalGameRepository().getWhatsThatGame("whats-that")
 
     @Test
     fun sessionUsesEveryTargetExactlyOnceWithTwoExplicitChoices() {
-        val session = ChooseItSessionFactory(Random(7)).create(game)
+        val session = WhatsThatSessionFactory(Random(7)).create(game)
 
         assertEquals(10, session.rounds.size)
-        assertEquals(game.items.map { it.id }.toSet(), session.rounds.map { it.targetItemId }.toSet())
+        assertEquals(game.questions.map { it.imageId }.toSet(), session.rounds.map { it.targetItemId }.toSet())
         assertEquals(10, session.rounds.map { it.targetItemId }.distinct().size)
         session.rounds.forEach { round ->
             assertEquals(2, round.choices.size)
@@ -31,7 +31,7 @@ class ChooseItSessionFactoryTest {
     @Test
     fun correctChoiceAppearsOnBothSidesAcrossRandomizedSessions() {
         val correctPositions = (0..12).flatMap { seed ->
-            ChooseItSessionFactory(Random(seed)).create(game).rounds.map { round ->
+            WhatsThatSessionFactory(Random(seed)).create(game).rounds.map { round ->
                 round.choices.indexOfFirst { it.id == round.correctChoiceId }
             }
         }.toSet()

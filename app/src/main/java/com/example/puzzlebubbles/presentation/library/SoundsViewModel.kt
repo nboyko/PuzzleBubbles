@@ -20,7 +20,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 enum class RecordingStep { IDLE, PERMISSION, STARTING, RECORDING, STOPPING, PREVIEW, SAVING }
-enum class SoundError { LOAD, PERMISSION, RECORD, SAVE, DELETE, CLEANUP }
+enum class SoundError { LOAD, PERMISSION, RECORD, SAVE, DELETE, CLEANUP, IN_USE }
 data class RecordingModal(
     val step: RecordingStep = RecordingStep.IDLE, val draft: SoundDraft? = null,
     val elapsedMs: Long = 0, val error: SoundError? = null, val settingsRequired: Boolean = false,
@@ -217,6 +217,7 @@ class SoundsViewModel(
                 repository.delete(id)
                 uiState = uiState.copy(deleteId = null)
             } catch (e: CancellationException) { throw e }
+            catch (_: com.example.puzzlebubbles.domain.MediaInUseException) { uiState = uiState.copy(error = SoundError.IN_USE) }
             catch (_: Exception) { uiState = uiState.copy(error = SoundError.DELETE) }
             finally { uiState = uiState.copy(deleting = false) }
         }

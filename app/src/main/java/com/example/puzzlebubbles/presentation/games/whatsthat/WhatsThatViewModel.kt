@@ -1,30 +1,30 @@
-package com.example.puzzlebubbles.presentation.games.chooseit
+package com.example.puzzlebubbles.presentation.games.whatsthat
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.example.puzzlebubbles.domain.ChooseItGame
-import com.example.puzzlebubbles.domain.ChooseItPhase
-import com.example.puzzlebubbles.domain.ChooseItRound
-import com.example.puzzlebubbles.domain.ChooseItSessionEngine
-import com.example.puzzlebubbles.domain.ChooseItSessionFactory
+import com.example.puzzlebubbles.domain.WhatsThatGame
+import com.example.puzzlebubbles.domain.WhatsThatPhase
+import com.example.puzzlebubbles.domain.WhatsThatRound
+import com.example.puzzlebubbles.domain.WhatsThatSessionEngine
+import com.example.puzzlebubbles.domain.WhatsThatSessionFactory
 
-data class ChooseItUiState(
-    val round: ChooseItRound,
+data class WhatsThatUiState(
+    val round: WhatsThatRound,
     val roundNumber: Int,
     val roundCount: Int,
-    val phase: ChooseItPhase,
+    val phase: WhatsThatPhase,
     val feedbackChoiceId: String?,
     val audioRequestId: Int,
 )
 
-class ChooseItViewModel(
-    game: ChooseItGame,
-    sessionFactory: ChooseItSessionFactory = ChooseItSessionFactory(),
+class WhatsThatViewModel(
+    game: WhatsThatGame,
+    sessionFactory: WhatsThatSessionFactory = WhatsThatSessionFactory(),
 ) : ViewModel() {
-    private val engine = ChooseItSessionEngine(sessionFactory.create(game))
+    private val engine = WhatsThatSessionEngine(sessionFactory.create(game))
     private var audioRequestId = 1
 
     var uiState by mutableStateOf(snapshot())
@@ -43,13 +43,13 @@ class ChooseItViewModel(
     }
 
     fun replayAudio() {
-        if (engine.state.phase != ChooseItPhase.GAME_COMPLETE) {
+        if (engine.state.phase != WhatsThatPhase.GAME_COMPLETE) {
             audioRequestId += 1
             uiState = snapshot()
         }
     }
 
-    private fun snapshot() = ChooseItUiState(
+    private fun snapshot() = WhatsThatUiState(
         round = engine.currentRound,
         roundNumber = engine.state.roundIndex + 1,
         roundCount = engine.roundCount,
@@ -58,10 +58,10 @@ class ChooseItViewModel(
         audioRequestId = audioRequestId,
     )
 
-    class Factory(private val game: ChooseItGame) : ViewModelProvider.Factory {
+    class Factory(private val game: WhatsThatGame) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            require(modelClass.isAssignableFrom(ChooseItViewModel::class.java))
-            return modelClass.cast(ChooseItViewModel(game))!!
+            require(modelClass.isAssignableFrom(WhatsThatViewModel::class.java))
+            return modelClass.cast(WhatsThatViewModel(game))!!
         }
     }
 }

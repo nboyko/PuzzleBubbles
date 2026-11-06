@@ -49,6 +49,8 @@ internal fun HomeNavigationBar(
     onGamesSelected: () -> Unit,
     onLibrarySelected: () -> Unit,
     modifier: Modifier = Modifier,
+    homeSelected: Boolean = !librarySelected,
+    accentColor: Color? = null,
 ) {
     Box(modifier.fillMaxWidth().testTag("bottom-navigation")) {
         Canvas(Modifier.matchParentSize()) {
@@ -66,6 +68,7 @@ internal fun HomeNavigationBar(
             // Tangent circular arcs keep both shoulders smooth and the gap close to the bubble.
             val bar = Path().apply {
                 moveTo(0f, top)
+                if (librarySelected || homeSelected) {
                 lineTo(selectedCenter - shoulder, top)
                 arcTo(
                     Rect(selectedCenter - shoulder - cornerRadius, top,
@@ -82,12 +85,14 @@ internal fun HomeNavigationBar(
                         selectedCenter + shoulder + cornerRadius, top + cornerRadius * 2),
                     180f - tangentAngle, 90f + tangentAngle, false,
                 )
+                }
                 lineTo(size.width, top)
                 lineTo(size.width, size.height)
                 lineTo(0f, size.height)
                 close()
             }
-            drawPath(bar, Brush.horizontalGradient(listOf(Color(0xFFDDEFFA), Color(0xFFEDE3F8))))
+            drawPath(bar, Brush.horizontalGradient(if (accentColor == null) listOf(Color(0xFFDDEFFA), Color(0xFFEDE3F8))
+                else listOf(Color(0xFFDDEFFA), Color(0xFFEAF5FF))))
         }
         Row(
             Modifier.fillMaxWidth().navigationBarsPadding().selectableGroup()
@@ -95,11 +100,11 @@ internal fun HomeNavigationBar(
             horizontalArrangement = Arrangement.Center,
         ) {
             val destinations = listOf(
-                Triple("ui-games", stringResource(R.string.home), !librarySelected),
+                Triple("ui-games", stringResource(R.string.home), homeSelected),
                 Triple("ui-library", stringResource(R.string.library), librarySelected),
             )
             destinations.forEachIndexed { index, (icon, title, active) ->
-                val accent = if (index == 0) Color(0xFF166EC5) else Color(0xFF9251B7)
+                val accent = accentColor ?: if (index == 0) Color(0xFF166EC5) else Color(0xFF9251B7)
                 val interaction = remember { MutableInteractionSource() }
                 val pressed by interaction.collectIsPressedAsState()
                 val emphasis by animateFloatAsState(if (pressed) 1f else 0f, label = "navigation touch")
@@ -154,13 +159,14 @@ private fun SelectedNavigationBubble(modifier: Modifier, accent: Color) {
     }
 }
 
-@Preview(name = "Navigation - both selections", widthDp = 360, showBackground = true, backgroundColor = 0xFFEAF8FF)
+@Preview(name = "Navigation - selections and neutral", widthDp = 360, showBackground = true, backgroundColor = 0xFFEAF8FF)
 @Composable
 private fun HomeNavigationBarPreview() {
     PuzzleBubblesTheme {
         Column {
             HomeNavigationBar(false, {}, {})
             HomeNavigationBar(true, {}, {})
+            HomeNavigationBar(false, {}, {}, homeSelected = false)
         }
     }
 }

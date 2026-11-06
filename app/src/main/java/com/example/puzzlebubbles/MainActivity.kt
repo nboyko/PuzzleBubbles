@@ -14,13 +14,13 @@ import com.example.puzzlebubbles.presentation.home.HomeViewModel
 import com.example.puzzlebubbles.ui.theme.PuzzleBubblesTheme
 
 class MainActivity : ComponentActivity() {
-    private val gameRepository = LocalGameRepository()
+    private val gameRepository get() = (application as PuzzleBubblesApplication).gameRepository
     private lateinit var audioPlayer: LocalAudioPlayer
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        audioPlayer = LocalAudioPlayer(this)
+        audioPlayer = LocalAudioPlayer(this) { (application as PuzzleBubblesApplication).soundFiles.assetFile(it) }
         val homeViewModel = ViewModelProvider(
             this,
             HomeViewModel.Factory(gameRepository),

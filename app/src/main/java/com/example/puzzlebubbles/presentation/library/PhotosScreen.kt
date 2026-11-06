@@ -200,6 +200,7 @@ private fun PhotoErrorText(error: PhotoError?) {
         PhotoError.IMPORT -> R.string.photo_import_error
         PhotoError.SAVE -> R.string.photo_save_error
         PhotoError.DELETE -> R.string.photo_delete_error
+        PhotoError.IN_USE -> R.string.photo_in_use
         null -> return
     }
     Text(stringResource(message), Modifier.padding(12.dp), color = PhotoInk, textAlign = TextAlign.Center)

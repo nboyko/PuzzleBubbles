@@ -1,6 +1,6 @@
 # Iteration 2: Library functionality
 
-Status: **In progress**. Phases 1–6 are verified; the full iteration is not finished
+Status: **In progress**. Phases 1–7 are verified; the full iteration is not finished
 until the user explicitly confirms it.
 
 ## Verified phases
@@ -119,3 +119,33 @@ Portrait and landscape with enlarged text were rendered and inspected on the
 Android 17 emulator. Single/multiple-row, landscape, and enlarged-text Compose
 previews compile; IDE preview rendering, physical-device checks, and subjective
 audio quality remain unverified. Custom games are not implemented.
+
+### Phase 7: feat create, play, and delete custom What's That? games
+
+The single-page Create Game editor names a game, selects a Library photo pool,
+and adds 1–10 explicit photo/sound questions. Matching media modals apply pending
+choices on Done; referenced photos and the two-photo minimum are protected.
+Drafts survive rotation, changed drafts require discard confirmation, and failed
+saves preserve work for guarded retry. Compact blue controls include underlined
+links, a grey question X, and sound replacement icons.
+
+Saved games persist atomically in Room through an additive migration and play
+each question once with a distinct random distractor. Animals retains ten rounds.
+Confirmed deletion removes one custom game's references while retaining Library
+files; referenced media deletion is blocked, while photo cropping remains available.
+Only the targeted game receives the deletion background. Selection navigation is
+neutral, entry audio waits for the transition, and code/assets use WhatsThat naming.
+
+Verified: debug/test builds, 18 unit tests, 22 gameplay/navigation/storage/asset
+emulator tests after the rename, and 26 finalization checks covering the wizard,
+deletion failure/retry, native completion audio, migrations, and Home navigation.
+Lint reports zero errors and 18 warnings. Device screenshots of the editor, media
+modals, game list, deletion confirmation, and custom gameplay were inspected;
+enlarged-text/landscape keyboard behavior is tested. Loading/error/empty/selected
+and completed previews compile; IDE preview rendering and physical-device checks
+remain unverified. An earlier broader native AAC duration-boundary test fails on
+this Android 17 fixture and was reproduced on the unchanged baseline; it is
+unrelated to custom-game behavior, and the 5,100 ms validation bound is unchanged.
+The full device suite is not claimed as passing. Process-death draft restoration
+is not supported. Actual disk-full operation remains unverified; injected failures
+are covered.

@@ -5,11 +5,22 @@ This overview describes the current checkout, not iteration acceptance.
 
 ## Current behavior
 
-- Home shows image cards for **What's That?** (Choose It) and **Match Up**
+- Home shows image cards for **What's That?** and **Match Up**
   (Matching), with Baloo 2 headings and Lilita One card titles.
-- What's That? opens a game list containing the predefined **Animals** game.
-  Play opens the existing game; gameplay Back returns to selection and completion
-  returns Home. The list supports multiple repository entries; Add Game is disabled.
+- What's That? lists predefined **Animals** first, followed by saved custom games.
+  Add Game opens a single-page editor using Library photos and recordings. Select
+  at least two photos, then add 1–10 explicit image/sound questions. Media selectors
+  are modals with pending choices applied on Done. Referenced photos and the
+  two-photo minimum are protected; questions can be removed or have media replaced.
+  Save validates complete questions and persists the game; Cancel confirms discarding
+  a changed draft. Rotation retains drafts, and failed saves allow explicit retry.
+  Custom games play every question once with a random distinct distractor from
+  their photo pool. Gameplay Back returns to selection; completion returns Home.
+  Selection has fixed Home/Library navigation with neither item active.
+- Custom-game Delete precedes Play and requires confirmation. It removes only
+  that game's metadata and references. Referenced Library photos and recordings
+  cannot be deleted until their games are manually removed; cropping remains
+  available. Predefined games cannot be deleted. Saved-game editing is not offered.
 - Home and My Library share a fixed bottom navigation bar with labeled icons
   and a raised bubble around the active icon. There are no top tabs.
 - My Library has Photos and Sounds destinations with Back to My Library and
@@ -23,7 +34,7 @@ This overview describes the current checkout, not iteration acceptance.
   retain the photo's identity; unchanged Save closes without rewriting.
   The modal blocks background navigation and conflicting operations. Preview
   and busy state survive rotation; unsaved work is discarded after process
-  death. Photos are not yet used in games.
+  death. Saved photos can be used in custom games.
 - Sounds records microphone audio in a modal, stopping automatically after five
   seconds or when Stop is pressed. Native AAC output may have up to 100 ms of
   overhead; files longer than 5,100 ms are rejected and actual duration is retained.
@@ -40,7 +51,7 @@ This overview describes the current checkout, not iteration acceptance.
   Native capture, duration limits, playback, and recovery have been checked on a
   physical Android 10 phone; broader device coverage and subjective speech-quality
   assessment remain outside that verification.
-- What's That? uses ten bundled image/audio pairs. Each randomized session has
+- Animals uses ten bundled image/audio pairs. Each randomized session has
   ten rounds, each target once, and two shuffled choices with explicit correctness.
   Children can tap or swipe an image bubble in any direction to choose it, even
   if their finger leaves the bubble. Each gesture selects only its starting image.
@@ -61,7 +72,8 @@ One Android `app` module, with sources under
 `app/src/main/java/com/example/puzzlebubbles/`:
 
 - `presentation/`: Compose screens, ViewModels, and Navigation Compose routes
-  (`home`, `library`, `library/photos`, `library/sounds`, `choose-it`, `matching`);
+  (`home`, `library`, `library/photos`, `library/sounds`, `whats-that`,
+  `whats-that/play/{gameId}`, `create-game`, `matching`);
   game screens are grouped by mechanic. Photos and Sounds have destination-scoped
   ViewModels and consume stable asset IDs.
 - `domain/`: catalog/content models and pure session generation/state transitions.
@@ -72,13 +84,15 @@ One Android `app` module, with sources under
 - `data/`: `GameRepository` implementation with a Kotlin preset, resource
   resolvers, and single-instance `MediaPlayer` playback. `data/photos` handles
   sampled decoding, EXIF orientation, center cropping, private WebP files, and
-  Room metadata (schema version 3, exported under `app/schemas/`). Saves and
+  Room metadata (schema version 4, exported under `app/schemas/`). Saves and
   deletes are serialized with reconciliation of interrupted operations.
   `data/sounds` stores private AAC/MPEG-4 recordings, stages validated saves,
   and reconciles interrupted writes and deletions. The existing `photos.db` has
-  an additive migration for sound metadata, preserving photo records.
+  additive migrations for sound metadata and custom games, preserving existing media.
+  `LibraryGameRepository` combines the bundled catalog with saved games; Room
+  transactions and foreign keys protect photo-pool/question references.
   `PuzzleBubblesApplication` owns Library storage services; `MainActivity` wires the
-  rendering boundary and game dependencies. The Choose It ViewModel is scoped
+  rendering boundary and game dependencies. The What's That? ViewModel is scoped
   to its navigation destination.
 
 Screen-scoped effects cancel feedback and completion timers on disposal and stop
@@ -88,7 +102,7 @@ on Android 12+; older supported devices retain the unblurred icon and rim.
 
 Game content is bundled locally; imported photos and user recordings stay in
 app-owned storage and are excluded with their metadata from cloud backup and
-device transfer. Recordings are not yet used in games.
+device transfer. Custom games reference these assets by stable IDs without copying them.
 There is no network integration. Bundled source assets live under `assets/source/`;
 their runtime assets are Android resources.
 See [asset conventions](docs/content-assets.md) for formats, paths, and IDs.
@@ -112,6 +126,10 @@ minimum SDK 26). From the repository root on Windows:
 
 The second command requires an emulator or device. These are verification
 commands, not claims that the current checkout has passed every check.
+Use a disposable test emulator for `connectedDebugAndroidTest`: its APK cleanup
+can uninstall the application and clear private Library/game data. For a device
+whose data must be retained, install APKs with `adb install -r` and run the
+instrumentation runner directly instead.
 
 ## Requirements and iteration workflow
 

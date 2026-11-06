@@ -1,4 +1,4 @@
-package com.example.puzzlebubbles.presentation.games.chooseit
+package com.example.puzzlebubbles.presentation.games.whatsthat
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -20,12 +20,14 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.puzzlebubbles.R
-import com.example.puzzlebubbles.domain.ChooseItGameSummary
+import com.example.puzzlebubbles.domain.WhatsThatGameSummary
 import com.example.puzzlebubbles.presentation.components.AssetImage
 import com.example.puzzlebubbles.presentation.components.BubbleButton
 import com.example.puzzlebubbles.presentation.home.HomeNavigationBar
@@ -37,44 +39,73 @@ private val SelectionAccent = Color(0xFF166EC5)
 
 @Composable
 fun WhatsThatGameSelectionScreen(
-    games: List<ChooseItGameSummary>,
+    games: List<WhatsThatGameSummary>,
     onPlay: (String) -> Unit,
     onHome: () -> Unit,
     onLibrary: () -> Unit,
     modifier: Modifier = Modifier,
+    onAdd: () -> Unit = {},
+    onDelete: (String) -> Unit = {},
+    enabled: Boolean = true,
+    loadError: Boolean = false,
+    onRetry: () -> Unit = {},
+    deletingGameId: String? = null,
 ) {
+    BlueGameTheme {
     val screenDescription = stringResource(R.string.whats_that_games)
+    val deletionDescription = stringResource(R.string.game_pending_delete)
     Column(modifier.fillMaxSize().testTag("whats-that-selection").semantics { paneTitle = screenDescription }
-        .background(Brush.verticalGradient(listOf(Color(0xFFEAF8FF), Color(0xFFF6F0FF))))
+        .background(Brush.verticalGradient(listOf(Color(0xFFEAF8FF), Color(0xFFF0F7FF))))
         .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))) {
+        if (loadError) {
+            Text(stringResource(R.string.game_load_error), Modifier.padding(16.dp))
+            androidx.compose.material3.TextButton(onClick = onRetry) { Text(stringResource(R.string.retry)) }
+        }
         Box(Modifier.fillMaxWidth().weight(1f)) {
             LazyColumn(Modifier.fillMaxSize().testTag("whats-that-game-list"),
                 contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 104.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 items(games, key = { it.id }) { game ->
-                    Card(onClick = { onPlay(game.id) }, modifier = Modifier.fillMaxWidth().semantics { role = Role.Button },
+                    val deleting = game.id == deletingGameId
+                    val cardColor = when {
+                        deleting -> Color(0xFFFFEBEE)
+                        game.isBuiltIn -> Color(0xFFDDEEFF)
+                        else -> Color.White
+                    }
+                    Card(onClick = { onPlay(game.id) }, enabled = enabled,
+                        modifier = Modifier.fillMaxWidth().testTag("game-row-${game.id}").semantics {
+                            role = Role.Button
+                            if (deleting) stateDescription = deletionDescription
+                        },
                         shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(
-                            containerColor = if (game.isBuiltIn) Color(0xFFDDEEFF) else Color.White)) {
-                        Row(Modifier.fillMaxWidth().heightIn(min = 96.dp).padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            containerColor = cardColor, disabledContainerColor = cardColor,
+                            contentColor = SelectionInk, disabledContentColor = SelectionInk)) {
+                        Row(Modifier.fillMaxWidth().heightIn(min = 96.dp).padding(8.dp),
+                            verticalAlignment = Alignment.CenterVertically) {
                             AssetImage("ui-games", Modifier.size(56.dp), colorFilter = ColorFilter.tint(SelectionAccent))
-                            Text(game.name, Modifier.weight(1f),
+                            Text(game.name, Modifier.weight(1f).padding(8.dp),
                                 color = if (game.isBuiltIn) SelectionAccent else SelectionInk,
-                                fontFamily = HomeHeadingFontFamily, fontSize = 24.sp,
+                                fontFamily = HomeHeadingFontFamily, fontSize = 22.sp,
+                                maxLines = 2, overflow = TextOverflow.Ellipsis,
                                 fontWeight = if (game.isBuiltIn) FontWeight.Bold else FontWeight.Normal)
-                            BubbleButton(onClick = { onPlay(game.id) }, iconAssetId = "ui-play",
+                            if (!game.isBuiltIn) BubbleButton(onClick = { onDelete(game.id) }, enabled = enabled,
+                                iconAssetId = "ui-delete", accessibilityLabel = stringResource(R.string.delete_game, game.name),
+                                colors = listOf(SelectionAccent), showBorder = false)
+                            BubbleButton(onClick = { onPlay(game.id) }, enabled = enabled, iconAssetId = "ui-play",
                                 accessibilityLabel = stringResource(R.string.play_game, game.name),
                                 colors = listOf(SelectionAccent), showBorder = false)
                         }
                     }
                 }
             }
-            BubbleButton(onClick = {}, iconAssetId = "ui-plus", enabled = false, diameter = 72.dp,
-                accessibilityLabel = stringResource(R.string.add_game_coming_soon),
+            BubbleButton(onClick = onAdd, iconAssetId = "ui-plus", enabled = enabled, diameter = 72.dp,
+                accessibilityLabel = stringResource(R.string.add_game),
                 colors = listOf(Color.White), containerColors = listOf(SelectionAccent), showBorder = false,
                 modifier = Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 8.dp).testTag("add-game-fab"))
         }
-        HomeNavigationBar(librarySelected = false, onGamesSelected = onHome, onLibrarySelected = onLibrary)
+        HomeNavigationBar(librarySelected = false, homeSelected = false, onGamesSelected = onHome, onLibrarySelected = onLibrary,
+            accentColor = SelectionAccent)
+    }
     }
 }
 
@@ -84,7 +115,7 @@ fun WhatsThatGameSelectionScreen(
 @Composable
 private fun GameSelectionPreview() {
     PuzzleBubblesTheme {
-        WhatsThatGameSelectionScreen(listOf(ChooseItGameSummary("whats-that", "Animals", isBuiltIn = true)), {}, {}, {})
+        WhatsThatGameSelectionScreen(listOf(WhatsThatGameSummary("whats-that", "Animals", isBuiltIn = true)), {}, {}, {})
     }
 }
 
@@ -93,9 +124,9 @@ private fun GameSelectionPreview() {
 private fun MultipleGamesPreview() {
     PuzzleBubblesTheme {
         WhatsThatGameSelectionScreen(listOf(
-            ChooseItGameSummary("whats-that", "Animals", isBuiltIn = true),
-            ChooseItGameSummary("whats-that-preview-a", "My Animals"),
-            ChooseItGameSummary("whats-that-preview-b", "A longer family game name"),
+            WhatsThatGameSummary("whats-that", "Animals", isBuiltIn = true),
+            WhatsThatGameSummary("whats-that-preview-a", "My Animals"),
+            WhatsThatGameSummary("whats-that-preview-b", "A longer family game name"),
         ), {}, {}, {})
     }
 }

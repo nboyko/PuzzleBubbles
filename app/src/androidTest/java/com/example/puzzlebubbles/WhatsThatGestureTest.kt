@@ -7,10 +7,10 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import com.example.puzzlebubbles.data.AudioPlayer
 import com.example.puzzlebubbles.data.LocalGameRepository
-import com.example.puzzlebubbles.domain.ChooseItPhase
-import com.example.puzzlebubbles.domain.ChooseItSessionFactory
-import com.example.puzzlebubbles.presentation.games.chooseit.ChooseItGameScreen
-import com.example.puzzlebubbles.presentation.games.chooseit.ChooseItViewModel
+import com.example.puzzlebubbles.domain.WhatsThatPhase
+import com.example.puzzlebubbles.domain.WhatsThatSessionFactory
+import com.example.puzzlebubbles.presentation.games.whatsthat.WhatsThatGameScreen
+import com.example.puzzlebubbles.presentation.games.whatsthat.WhatsThatViewModel
 import com.example.puzzlebubbles.ui.theme.PuzzleBubblesTheme
 import org.junit.Assert.*
 import org.junit.Before
@@ -18,9 +18,9 @@ import org.junit.Rule
 import org.junit.Test
 import kotlin.random.Random
 
-class ChooseItGestureTest {
+class WhatsThatGestureTest {
     @get:Rule val compose = createComposeRule()
-    private lateinit var model: ChooseItViewModel
+    private lateinit var model: WhatsThatViewModel
     private val answers = mutableListOf<String>()
     private val silentAudio = object : AudioPlayer {
         override fun play(assetId: String) = Unit
@@ -34,11 +34,11 @@ class ChooseItGestureTest {
 
     @Before fun setup() {
         compose.mainClock.autoAdvance = false
-        model = ChooseItViewModel(LocalGameRepository().getChooseItGame("whats-that"),
-            ChooseItSessionFactory(Random(0)))
+        model = WhatsThatViewModel(LocalGameRepository().getWhatsThatGame("whats-that"),
+            WhatsThatSessionFactory(Random(0)))
         compose.setContent {
             PuzzleBubblesTheme {
-                ChooseItGameScreen("What's That?", model.uiState, silentAudio,
+                WhatsThatGameScreen("What's That?", model.uiState, silentAudio,
                     onAnswer = { answers += it; model.answer(it) }, onReplay = model::replayAudio,
                     onFeedbackFinished = model::finishFeedback, onBack = {}, onGameComplete = {},
                     modifier = Modifier.fillMaxSize())
@@ -52,7 +52,7 @@ class ChooseItGestureTest {
         choice(id).performTouchInput { click() }
         compose.runOnIdle {
             assertEquals(listOf(id), answers)
-            assertEquals(ChooseItPhase.CORRECT_FEEDBACK, model.uiState.phase)
+            assertEquals(WhatsThatPhase.CORRECT_FEEDBACK, model.uiState.phase)
         }
     }
 
@@ -67,7 +67,7 @@ class ChooseItGestureTest {
         choice(id).performTouchInput { swipeRight() }
         compose.runOnIdle {
             assertEquals(listOf(id), answers)
-            assertEquals(ChooseItPhase.CORRECT_FEEDBACK, model.uiState.phase)
+            assertEquals(WhatsThatPhase.CORRECT_FEEDBACK, model.uiState.phase)
         }
     }
 
@@ -77,7 +77,7 @@ class ChooseItGestureTest {
         choice(incorrect).performTouchInput { swipeUp() }
         compose.runOnIdle {
             assertEquals(listOf(incorrect), answers)
-            assertEquals(ChooseItPhase.WRONG_FEEDBACK, model.uiState.phase)
+            assertEquals(WhatsThatPhase.WRONG_FEEDBACK, model.uiState.phase)
             assertEquals(1, model.uiState.roundNumber)
         }
         choice(right).performTouchInput { swipeDown() }
@@ -86,7 +86,7 @@ class ChooseItGestureTest {
         choice(right).performTouchInput { swipeDown() }
         compose.runOnIdle {
             assertEquals(listOf(incorrect, right), answers)
-            assertEquals(ChooseItPhase.CORRECT_FEEDBACK, model.uiState.phase)
+            assertEquals(WhatsThatPhase.CORRECT_FEEDBACK, model.uiState.phase)
         }
     }
 
@@ -108,7 +108,7 @@ class ChooseItGestureTest {
         compose.mainClock.advanceTimeBy(2000)
         compose.runOnIdle {
             assertEquals(2, model.uiState.roundNumber)
-            assertEquals(ChooseItPhase.WAITING_FOR_ANSWER, model.uiState.phase)
+            assertEquals(WhatsThatPhase.WAITING_FOR_ANSWER, model.uiState.phase)
         }
         compose.onRoot().performTouchInput { moveBy(Offset(30f, 30f)); up() }
         compose.runOnIdle { assertEquals(listOf(id), answers) }
@@ -118,7 +118,7 @@ class ChooseItGestureTest {
         choice(correct).performTouchInput { down(center); moveBy(Offset(1f, 1f)); cancel() }
         compose.runOnIdle {
             assertTrue(answers.isEmpty())
-            assertEquals(ChooseItPhase.WAITING_FOR_ANSWER, model.uiState.phase)
+            assertEquals(WhatsThatPhase.WAITING_FOR_ANSWER, model.uiState.phase)
         }
     }
 }

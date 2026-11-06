@@ -34,6 +34,11 @@ class LocalAudioPlayer(context: Context, private val soundFile: ((String) -> Fil
         .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build()
 
     override fun play(assetId: String) {
+        if (assetId.startsWith("library-sound:")) {
+            stop()
+            toggle(assetId)
+            return
+        }
         stop()
         val created = MediaPlayer.create(applicationContext, LocalAudioAssetResolver.resolveAudio(assetId))
             ?: error("Unable to create audio player for asset: $assetId")

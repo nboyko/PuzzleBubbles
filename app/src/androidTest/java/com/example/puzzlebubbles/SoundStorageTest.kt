@@ -179,7 +179,7 @@ class SoundStorageTest {
             old.version = 1
         }
         val migrated = Room.databaseBuilder(context, PhotoDatabase::class.java, file.path)
-            .addMigrations(PhotoDatabase.MIGRATION_1_2, PhotoDatabase.MIGRATION_2_3).build()
+            .addMigrations(PhotoDatabase.MIGRATION_1_2, PhotoDatabase.MIGRATION_2_3, PhotoDatabase.MIGRATION_3_4).build()
         try {
             assertEquals(id, migrated.photos().all().single().id)
             assertEquals(1234L, migrated.photos().all().single().createdAt)
@@ -203,7 +203,7 @@ class SoundStorageTest {
             old.version = 2
         }
         val migrated = Room.databaseBuilder(context, PhotoDatabase::class.java, file.path)
-            .addMigrations(PhotoDatabase.MIGRATION_2_3).build()
+            .addMigrations(PhotoDatabase.MIGRATION_2_3, PhotoDatabase.MIGRATION_3_4).build()
         try {
             val rows = migrated.sounds().all()
             assertEquals(listOf(newerId, olderId), rows.map { it.id })

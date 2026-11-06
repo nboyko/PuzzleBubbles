@@ -23,7 +23,7 @@ data class PhotoModal(val source: PhotoSource, val savedId: String? = null,
                       val crop: CropTransform = CropTransform(source.width, source.height)) {
     val assetId: String get() = source.assetId
 }
-enum class PhotoError { LOAD, IMPORT, SAVE, DELETE }
+enum class PhotoError { LOAD, IMPORT, SAVE, DELETE, IN_USE }
 
 class PhotosViewModel(
     private val repository: PhotoRepository,
@@ -124,6 +124,7 @@ class PhotosViewModel(
                 repository.delete(id)
                 modal = null
             } catch (e: CancellationException) { throw e }
+            catch (_: com.example.puzzlebubbles.domain.MediaInUseException) { error = PhotoError.IN_USE }
             catch (_: Exception) { error = PhotoError.DELETE }
             finally { busy = false }
         }

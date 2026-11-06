@@ -3,17 +3,18 @@ package com.example.puzzlebubbles.data
 import com.example.puzzlebubbles.domain.GameDefinition
 import com.example.puzzlebubbles.domain.GameRepository
 import com.example.puzzlebubbles.domain.GameType
-import com.example.puzzlebubbles.domain.ChooseItGame
-import com.example.puzzlebubbles.domain.ChooseItItem
-import com.example.puzzlebubbles.domain.ChooseItGameSummary
+import com.example.puzzlebubbles.domain.WhatsThatGame
+import com.example.puzzlebubbles.domain.WhatsThatChoice
+import com.example.puzzlebubbles.domain.WhatsThatQuestion
+import com.example.puzzlebubbles.domain.WhatsThatGameSummary
 
 class LocalGameRepository : GameRepository {
     override fun getGameCatalog(): List<GameDefinition> = listOf(
         GameDefinition(
             id = "whats-that",
             title = "What's That?",
-            type = GameType.CHOOSE_IT,
-            coverImageAssetId = "choose-it-cover",
+            type = GameType.WHATS_THAT,
+            coverImageAssetId = "whats-that-cover",
         ),
         GameDefinition(
             id = "matching",
@@ -23,24 +24,18 @@ class LocalGameRepository : GameRepository {
         ),
     )
 
-    override fun getChooseItGames(): List<ChooseItGameSummary> =
-        listOf(ChooseItGameSummary("whats-that", "Animals", isBuiltIn = true))
+    override fun getWhatsThatGames(): List<WhatsThatGameSummary> =
+        listOf(WhatsThatGameSummary("whats-that", "Animals", isBuiltIn = true))
 
-    override fun getChooseItGame(id: String): ChooseItGame {
+    override fun getWhatsThatGame(id: String): WhatsThatGame {
         require(id == "whats-that") { "Unknown What's That? game ID: $id" }
-        return ChooseItGame(
+        val targets = listOf("cat", "cow", "dog", "goat", "monkey", "mouse", "parrot", "pig", "rabbit", "sheep")
+        return WhatsThatGame(
             id = id,
             title = "Animals",
-            items = listOf(
-                item("cat"), item("cow"), item("dog"), item("goat"), item("monkey"),
-                item("mouse"), item("parrot"), item("pig"), item("rabbit"), item("sheep"),
-            ),
+            imagePool = targets.map { WhatsThatChoice(it, "$it-image") },
+            questions = targets.map { WhatsThatQuestion(it, it, "$it-audio") },
         )
     }
 
-    private fun item(id: String) = ChooseItItem(
-        id = id,
-        imageAssetId = "$id-image",
-        audioAssetId = "$id-audio",
-    )
 }

@@ -1,9 +1,9 @@
-package com.example.puzzlebubbles.presentation.games.chooseit
+package com.example.puzzlebubbles.presentation.games.whatsthat
 
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.puzzlebubbles.ui.theme.PuzzleBubblesTheme
 import androidx.compose.ui.platform.LocalInspectionMode
-import com.example.puzzlebubbles.domain.ChooseItSessionFactory
+import com.example.puzzlebubbles.domain.WhatsThatSessionFactory
 import com.example.puzzlebubbles.data.LocalGameRepository
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -44,6 +44,7 @@ import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.runtime.key
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -66,21 +67,24 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.example.puzzlebubbles.R
 import com.example.puzzlebubbles.data.AudioPlayer
-import com.example.puzzlebubbles.domain.ChooseItChoice
-import com.example.puzzlebubbles.domain.ChooseItPhase
+import com.example.puzzlebubbles.domain.WhatsThatChoice
+import com.example.puzzlebubbles.domain.WhatsThatPhase
 import com.example.puzzlebubbles.presentation.components.AssetImage
 import com.example.puzzlebubbles.presentation.components.BubbleButton
 import com.example.puzzlebubbles.ui.theme.GameTitleFontFamily
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.first
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 
 private val GameTitleColor = Color(0xFF166CAF)
 
 @Composable
-fun ChooseItGameScreen(
+fun WhatsThatGameScreen(
     title: String,
-    uiState: ChooseItUiState,
+    uiState: WhatsThatUiState,
     audioPlayer: AudioPlayer,
     onAnswer: (String) -> Unit,
     onReplay: () -> Unit,
@@ -90,8 +94,13 @@ fun ChooseItGameScreen(
     modifier: Modifier = Modifier,
 ) {
     val inspection = LocalInspectionMode.current
-    LaunchedEffect(uiState.audioRequestId) {
-        if (!inspection && uiState.phase != ChooseItPhase.GAME_COMPLETE) {
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    val lifecycleState by lifecycle.currentStateFlow.collectAsState()
+    LaunchedEffect(audioPlayer, lifecycle, uiState.audioRequestId) {
+        if (!inspection && uiState.phase != WhatsThatPhase.GAME_COMPLETE) {
+            // Navigation keeps incoming destinations STARTED during its animation.
+            // Start the prompt only once this destination is fully on screen.
+            lifecycle.currentStateFlow.first { it.isAtLeast(Lifecycle.State.RESUMED) }
             audioPlayer.play(uiState.round.audioAssetId)
         }
     }
@@ -103,7 +112,7 @@ fun ChooseItGameScreen(
         ),
     ) {
         GameBubbleBackdrop(Modifier.fillMaxSize())
-        if (uiState.phase == ChooseItPhase.GAME_COMPLETE) {
+        if (uiState.phase == WhatsThatPhase.GAME_COMPLETE) {
             GameCompleteScreen(audioPlayer = audioPlayer, onFinished = onGameComplete)
         } else {
             val roundDescription = stringResource(
@@ -139,12 +148,13 @@ fun ChooseItGameScreen(
                                 bubbleSize = choiceSize,
                                 centerTranslation = if (index == 0) centerDistance else -centerDistance,
                                 maxSuccessScale = maxSuccessScale,
-                                hidden = uiState.phase == ChooseItPhase.CORRECT_FEEDBACK &&
+                                hidden = uiState.phase == WhatsThatPhase.CORRECT_FEEDBACK &&
                                     uiState.feedbackChoiceId != choice.id,
-                                enabled = uiState.phase == ChooseItPhase.WAITING_FOR_ANSWER,
-                                isWrong = uiState.phase == ChooseItPhase.WRONG_FEEDBACK &&
+                                enabled = uiState.phase == WhatsThatPhase.WAITING_FOR_ANSWER &&
+                                    (inspection || lifecycleState.isAtLeast(Lifecycle.State.RESUMED)),
+                                isWrong = uiState.phase == WhatsThatPhase.WRONG_FEEDBACK &&
                                     uiState.feedbackChoiceId == choice.id,
-                                isCorrect = uiState.phase == ChooseItPhase.CORRECT_FEEDBACK &&
+                                isCorrect = uiState.phase == WhatsThatPhase.CORRECT_FEEDBACK &&
                                     uiState.feedbackChoiceId == choice.id,
                                 onClick = { onAnswer(choice.id) },
                                 onWrongFinished = onFeedbackFinished,
@@ -156,8 +166,9 @@ fun ChooseItGameScreen(
                     }
                 }
                 ReplayBubble(
-                    enabled = uiState.phase == ChooseItPhase.WAITING_FOR_ANSWER ||
-                        uiState.phase == ChooseItPhase.WRONG_FEEDBACK,
+                    enabled = (uiState.phase == WhatsThatPhase.WAITING_FOR_ANSWER ||
+                        uiState.phase == WhatsThatPhase.WRONG_FEEDBACK) &&
+                        (inspection || lifecycleState.isAtLeast(Lifecycle.State.RESUMED)),
                     onClick = onReplay,
                     modifier = Modifier.align(Alignment.CenterHorizontally).padding(bottom = 20.dp),
                 )
@@ -189,7 +200,7 @@ private fun GameTopBar(title: String, onBack: () -> Unit) {
 
 @Composable
 private fun ChoiceBubble(
-    choice: ChooseItChoice,
+    choice: WhatsThatChoice,
     roundId: String,
     bubbleSize: androidx.compose.ui.unit.Dp,
     centerTranslation: Float,
@@ -439,10 +450,10 @@ private fun GameBubbleBackdrop(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun ChooseItPreviewContent(phase: ChooseItPhase) {
+private fun WhatsThatPreviewContent(phase: WhatsThatPhase) {
     val round = remember {
-        ChooseItSessionFactory(kotlin.random.Random(0))
-            .create(LocalGameRepository().getChooseItGame("whats-that")).rounds.first()
+        WhatsThatSessionFactory(kotlin.random.Random(0))
+            .create(LocalGameRepository().getWhatsThatGame("whats-that")).rounds.first()
     }
     val silentAudio = remember {
         object : AudioPlayer {
@@ -453,12 +464,12 @@ private fun ChooseItPreviewContent(phase: ChooseItPhase) {
         }
     }
     val feedback = when (phase) {
-        ChooseItPhase.CORRECT_FEEDBACK -> round.correctChoiceId
-        ChooseItPhase.WRONG_FEEDBACK -> round.choices.first { it.id != round.correctChoiceId }.id
+        WhatsThatPhase.CORRECT_FEEDBACK -> round.correctChoiceId
+        WhatsThatPhase.WRONG_FEEDBACK -> round.choices.first { it.id != round.correctChoiceId }.id
         else -> null
     }
     PuzzleBubblesTheme {
-        ChooseItGameScreen("What's That?", ChooseItUiState(round, 1, 10, phase, feedback, 0),
+        WhatsThatGameScreen("What's That?", WhatsThatUiState(round, 1, 10, phase, feedback, 0),
             silentAudio, {}, {}, {}, {}, {}, Modifier.fillMaxSize())
     }
 }
@@ -466,17 +477,17 @@ private fun ChooseItPreviewContent(phase: ChooseItPhase) {
 @Preview(name = "What's That - round", widthDp = 360, heightDp = 800)
 @Preview(name = "What's That - landscape", widthDp = 800, heightDp = 360)
 @Composable
-private fun ChooseItRoundPreview() = ChooseItPreviewContent(ChooseItPhase.WAITING_FOR_ANSWER)
+private fun WhatsThatRoundPreview() = WhatsThatPreviewContent(WhatsThatPhase.WAITING_FOR_ANSWER)
 
 @Preview(name = "What's That - wrong feedback", widthDp = 360, heightDp = 800)
 @Composable
-private fun ChooseItWrongPreview() = ChooseItPreviewContent(ChooseItPhase.WRONG_FEEDBACK)
+private fun WhatsThatWrongPreview() = WhatsThatPreviewContent(WhatsThatPhase.WRONG_FEEDBACK)
 
 @Preview(name = "What's That - correct feedback", widthDp = 360, heightDp = 800)
 @Composable
-private fun ChooseItCorrectPreview() = ChooseItPreviewContent(ChooseItPhase.CORRECT_FEEDBACK)
+private fun WhatsThatCorrectPreview() = WhatsThatPreviewContent(WhatsThatPhase.CORRECT_FEEDBACK)
 
 @Preview(name = "Game complete", widthDp = 360, heightDp = 800)
 @Preview(name = "Game complete - landscape", widthDp = 800, heightDp = 360)
 @Composable
-private fun GameCompletePreview() = ChooseItPreviewContent(ChooseItPhase.GAME_COMPLETE)
+private fun GameCompletePreview() = WhatsThatPreviewContent(WhatsThatPhase.GAME_COMPLETE)

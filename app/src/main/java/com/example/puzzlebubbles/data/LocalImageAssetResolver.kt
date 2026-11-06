@@ -18,10 +18,11 @@ object LocalImageAssetResolver {
         "ui-stop" -> R.drawable.ic_stop
         "ui-microphone" -> R.drawable.ic_microphone
         "ui-delete" -> R.drawable.ic_delete
+        "ui-replace" -> R.drawable.ic_replace
         "ui-games" -> R.drawable.ic_games
         "ui-trophy" -> R.drawable.ic_trophy
         "completion-background" -> R.drawable.bubbles_bg
-        "choose-it-cover" -> R.drawable.game_cover_whats_that
+        "whats-that-cover" -> R.drawable.game_cover_whats_that
         "matching-cover" -> R.drawable.game_cover_match_it_up
         "cat-image" -> R.drawable.cat
         "cow-image" -> R.drawable.cow

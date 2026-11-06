@@ -13,7 +13,7 @@ Before making product or architecture changes, read:
 
 Build the smallest working version of the application supporting two game mechanics:
 
-- **Choose It** — hear a sound and choose the matching image;
+- **What's That?** — hear a sound and choose the matching image;
 - **Matching** — match images from one side with images on the other side.
 
 Keep the first iteration intentionally simple.

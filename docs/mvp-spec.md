@@ -12,7 +12,7 @@ The next agreed implementation step and its acceptance criteria live in
 
 The first version contains two simple game mechanics:
 
-1. **Choose It** — the child hears a sound and chooses the matching image.
+1. **What's That?** — the child hears a sound and chooses the matching image.
 2. **Matching** — the child matches images from one side with images on the other side.
 
 The product will be developed iteratively.
@@ -98,11 +98,11 @@ The data layer is responsible for resolving these IDs to their current physical 
 
 ## 4. Navigation
 
-The Figma home design uses the child-facing names **What's That?** for Choose It
-and **Match Up** for Matching. The mechanic types remain distinct. The agreed
-Game Selection feature changes the What's That? built-in game/catalog ID from
-`choose-it` to `whats-that`; Match Up retains `matching`. Display names and asset
-IDs such as `choose-it-cover` are independent of those game IDs. The home uses the
+The Figma home design uses the child-facing names **What's That?**
+and **Match Up** for the two mechanics. Code uses `WhatsThat`, the package
+`whatsthat`, and `GameType.WHATS_THAT` for the first mechanic. Its built-in
+game/catalog ID is `whats-that`; Match Up retains `matching`. Display names and asset
+IDs such as `whats-that-cover` are independent of those game IDs. The home uses the
 corresponding `game-covers` artwork as card backgrounds with colored title bars.
 Home and Library use a fixed, full-width bottom navigation bar without top tabs
 or a floating container. Icons have small, matching-color labels underneath;
@@ -194,7 +194,7 @@ The first screen is a list of available game mechanics.
 
 Initial items:
 
-1. **Choose It**
+1. **What's That?**
 2. **Matching**
 
 Each item is represented by a large child-friendly card with:
@@ -205,11 +205,12 @@ Each item is represented by a large child-friendly card with:
 Selecting What's That? opens its Game Selection screen. Selecting the built-in
 **Animals** row starts existing gameplay. Match Up continues to open directly.
 The selection screen has no header, title, or header Back arrow. It uses the fixed
-Home/Library bottom navigation, with Home selected. Home returns to Home; Library
+Home/Library bottom navigation, with neither destination selected on Game Selection.
+Home returns to Home; Library
 opens My Library without leaving an extra selection destination behind it.
 A filled circular Add Game plus button floats at the bottom right above navigation,
-with list padding so it cannot cover the last row. It remains disabled and is
-described accessibly as "Add Game — coming soon" until creation is implemented.
+with list padding so it cannot cover the last row. Its accessible label is
+Add Game, and it opens the custom-game editor described below.
 
 The repository supplies the list and explicitly identifies the built-in entry.
 That row uses a slightly tinted background and bold accent-colored text. Other
@@ -225,20 +226,57 @@ from the back stack. Guard repeated Play taps and preserve destinations through
 activity recreation. Opening selection does not play gameplay audio; leaving
 gameplay stops audio and pending work, and starting again creates a fresh session.
 
-The built-in game has ID `whats-that`. Future custom games use
+The built-in game has ID `whats-that`. Custom games use
 `whats-that-<unique suffix>`, generated once and retained through edits; random UUID
 suffixes are recommended rather than hashes of mutable names or content.
-Custom-game creation, persistence, editing, and gameplay remain outside this
-navigation feature.
+Custom-game creation, persistence, and gameplay extend this navigation as
+described below; saved-game editing remains outside the agreed feature.
+
+The subsequent agreed **Create Custom What's That? Game Wizard** feature enables
+creation and playback from this list. Its full-screen single-page editor has a
+name, Library photo pool, and 1–10 explicit image/sound questions. It has Cancel
+instead of a header Back arrow, no step indicator, and no bottom navigation.
+Question rows start empty; Add Question appears after at least two photos have
+been selected, independently of the name or availability of sounds. Sounds are
+chosen per question, without a sound pool. All three media selectors use matching
+modals with Done/Cancel/X and Back dismissal; pending choices apply only on Done.
+Sound choices use compact preview rows with a single-selection checkbox at the
+right. Once a photo selection reaches two, it cannot be reduced below two.
+Photo selectors use only an image outline/highlight, without checkbox graphics.
+Select photos changes to Edit photos selection after applying photos; it and
+Add Question use underlined text links without added button padding. The empty
+name placeholder is New Game. Links use compact 16sp text, and the name input
+sits closer to the title. Question cards have a small grey X anchored to the
+top right independently of the heading, a Select sound link when empty, and a
+20dp two-arrow replacement icon at the top right of selected sound content that
+does not increase the gap above the progress line. Wizard and game-list controls use blue
+shades, including dialogs and list navigation. Only the game targeted for deletion
+receives a pale red deletion background without a border; other disabled rows retain their normal backgrounds.
+Question-referenced photos cannot be deselected from the pool until all those
+references are deleted or replaced. Single-choice photo/sound selections can be
+replaced but not cleared; deleting a question releases its references. All draft
+rows may be deleted, but Save still requires at least one complete question.
+Custom sessions play each question once in shuffled order, with one distinct
+distractor from the selected image pool; Animals retains ten rounds. Media may
+be reused across questions. Persist complete games and stable Library references
+atomically in Room without copying files. Referenced pool photos and question
+sounds cannot be deleted; photo cropping remains allowed. Use a generic
+"Delete the game first" explanation without game names. Custom-game rows have a
+Delete icon before Play, with confirmation. Deletion removes the game and its
+references atomically, preserving Library files; media can then be deleted manually
+only when no saved game still references it. Predefined games cannot be deleted.
+Saved-game editing remains outside this feature. Preserve drafts through rotation, confirm discarding meaningful
+changes, and retain drafts after Save failure for explicit retry. Process-death
+draft restoration is not required. See [the plan](plan.md) for acceptance criteria.
 
 Navigation:
 
 ```text
 HomeScreen
 │
-├── Choose It
+├── What's That?
 │   └── WhatsThatGameSelection
-│       └── ChooseItGameScreen
+│       └── WhatsThatGameScreen
 │
 └── Matching
     └── MatchingGameScreen
@@ -246,7 +284,7 @@ HomeScreen
 
 There is no intermediate category-selection screen in the first iteration.
 
-## 5. Game Type 1 — Choose It
+## 5. Game Type 1 — What's That?
 
 ### Purpose
 
@@ -495,19 +533,19 @@ CDN URL
 
 Game definitions should remain unchanged regardless of where the binary asset is physically stored.
 
-## 8. Choose It Model
+## 8. What's That? Model
 
 Conceptually:
 
 ```kotlin
-data class ChooseItGame(
+data class WhatsThatGame(
     val id: String,
     val title: String,
     val coverImageAssetId: String,
-    val rounds: List<ChooseItRound>
+    val rounds: List<WhatsThatRound>
 )
 
-data class ChooseItRound(
+data class WhatsThatRound(
     val id: String,
     val soundAssetId: String,
     val choices: List<ImageChoice>,
@@ -571,7 +609,7 @@ data class GameDefinition(
 )
 
 enum class GameType {
-    CHOOSE_IT,
+    WHATS_THAT,
     MATCHING
 }
 ```
@@ -622,7 +660,7 @@ Example:
 ```kotlin
 interface GameRepository {
     suspend fun getGameCatalog(): List<GameDefinition>
-    suspend fun getChooseItGame(id: String): ChooseItGame
+    suspend fun getWhatsThatGame(id: String): WhatsThatGame
     suspend fun getMatchingGame(id: String): MatchingGame
 }
 ```
@@ -674,10 +712,10 @@ The presentation and game logic should not need fundamental changes.
 
 Game state is separate from game content.
 
-For example, Choose It may contain:
+For example, What's That? may contain:
 
 ```kotlin
-data class ChooseItUiState(
+data class WhatsThatUiState(
     val roundIndex: Int,
     val selectedChoiceId: String?,
     val result: AnswerResult?,
@@ -760,13 +798,13 @@ They should be introduced only when a concrete product requirement makes them ne
 The first usable version is complete when:
 
 1. The app launches into the game list.
-2. The list contains Choose It and Matching.
+2. The list contains What's That? and Matching.
 3. Each game has a title and cover image.
-4. Choose It opens Game Selection, where the Animals row starts built-in gameplay.
+4. What's That? opens Game Selection, where the Animals row starts built-in gameplay.
 5. Matching opens directly into gameplay.
-6. Choose It supports multiple local rounds.
-7. Each Choose It round can play and replay one supplied audio asset.
-8. Each Choose It round displays two image choices.
+6. What's That? supports multiple local rounds.
+7. Each What's That? round can play and replay one supplied audio asset.
+8. Each What's That? round displays two image choices.
 9. The child can select an image.
 10. Correct and incorrect selections produce clear feedback.
 11. Matching displays multiple supplied image pairs.

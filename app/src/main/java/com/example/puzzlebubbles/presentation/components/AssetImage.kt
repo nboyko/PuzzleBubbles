@@ -23,6 +23,10 @@ fun AssetImage(
     contentDescription: String? = null,
     colorFilter: ColorFilter? = null,
 ) {
+    if (assetId.startsWith("library-photo:")) {
+        PhotoAssetImage(assetId, modifier, thumbnail = false, description = contentDescription)
+        return
+    }
     Image(
         painter = painterResource(LocalImageAssetResolver.resolveImage(assetId)),
         contentDescription = contentDescription,

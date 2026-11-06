@@ -225,7 +225,7 @@ private fun HomeIntro() {
 @Composable
 private fun GameCard(game: GameDefinition, onClick: () -> Unit) {
     val barColors = when (game.type) {
-        GameType.CHOOSE_IT -> listOf(Color(0xFF0879C7), Color(0xFF19BCE8))
+        GameType.WHATS_THAT -> listOf(Color(0xFF0879C7), Color(0xFF19BCE8))
         GameType.MATCHING -> listOf(Color(0xFF864ACD), Color(0xFFD568D6))
     }
     Card(

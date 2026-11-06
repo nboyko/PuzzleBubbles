@@ -7,10 +7,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
+import androidx.compose.material3.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.ui.res.stringResource
+import com.example.puzzlebubbles.R
+import androidx.activity.compose.BackHandler
+import com.example.puzzlebubbles.presentation.games.whatsthat.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
@@ -25,9 +28,9 @@ import com.example.puzzlebubbles.data.AudioPlayer
 import com.example.puzzlebubbles.domain.GameDefinition
 import com.example.puzzlebubbles.domain.GameType
 import com.example.puzzlebubbles.domain.GameRepository
-import com.example.puzzlebubbles.presentation.games.chooseit.ChooseItGameScreen
-import com.example.puzzlebubbles.presentation.games.chooseit.ChooseItViewModel
-import com.example.puzzlebubbles.presentation.games.chooseit.WhatsThatGameSelectionScreen
+import com.example.puzzlebubbles.presentation.games.whatsthat.WhatsThatGameScreen
+import com.example.puzzlebubbles.presentation.games.whatsthat.WhatsThatViewModel
+import com.example.puzzlebubbles.presentation.games.whatsthat.WhatsThatGameSelectionScreen
 import com.example.puzzlebubbles.presentation.games.matching.MatchingGameScreen
 import com.example.puzzlebubbles.presentation.home.HomeScreen
 import com.example.puzzlebubbles.presentation.library.LibraryScreen
@@ -67,7 +70,7 @@ fun PuzzleBubblesApp(
                     games = games,
                     onGameSelected = { game ->
                         val route = when (game.type) {
-                            GameType.CHOOSE_IT -> "whats-that"
+                            GameType.WHATS_THAT -> "whats-that"
                             GameType.MATCHING -> "matching"
                         }
                         if (navController.currentBackStackEntry?.destination?.route == "home") {
@@ -109,17 +112,27 @@ fun PuzzleBubblesApp(
                 )
             }
             composable("whats-that") {
-                val availableGames = remember(gameRepository) { gameRepository.getChooseItGames() }
+                val selection: GameSelectionViewModel = viewModel(factory = GameSelectionViewModel.Factory(gameRepository))
+                BackHandler(enabled = selection.deleteId != null || selection.deleting) { selection.cancelDelete() }
                 WhatsThatGameSelectionScreen(
-                    games = availableGames,
+                    games = selection.games,
+                    deletingGameId = selection.deleteId,
+                    loadError = selection.loadError,
+                    onRetry = selection::reload,
+                    enabled = !selection.deleting && selection.deleteId == null,
+                    onDelete = selection::requestDelete,
+                    onAdd = {
+                        if (!selection.deleting && selection.deleteId == null && navController.currentDestination?.route == "whats-that")
+                            navController.navigate("create-game") { launchSingleTop = true }
+                    },
                     onPlay = { gameId ->
-                        if (navController.currentBackStackEntry?.destination?.route == "whats-that") {
-                            navController.navigate("choose-it/${Uri.encode(gameId)}") { launchSingleTop = true }
+                        if (!selection.deleting && selection.deleteId == null && navController.currentBackStackEntry?.destination?.route == "whats-that") {
+                            navController.navigate("whats-that/play/${Uri.encode(gameId)}") { launchSingleTop = true }
                         }
                     },
-                    onHome = { navController.popBackStack("home", inclusive = false) },
+                    onHome = { if (!selection.deleting) navController.popBackStack("home", inclusive = false) },
                     onLibrary = {
-                        if (navController.currentBackStackEntry?.destination?.route == "whats-that") {
+                        if (!selection.deleting && navController.currentBackStackEntry?.destination?.route == "whats-that") {
                             navController.navigate("library") {
                                 popUpTo("home")
                                 launchSingleTop = true
@@ -127,21 +140,53 @@ fun PuzzleBubblesApp(
                         }
                     },
                 )
+                if (selection.deleteId != null) BlueGameTheme { AlertDialog(onDismissRequest = selection::cancelDelete,
+                    title = { Text(stringResource(R.string.delete_game_title)) },
+                    text = { Text(stringResource(if (selection.deleteError) R.string.game_delete_error else R.string.delete_game_message)) },
+                    confirmButton = { TextButton(onClick = selection::delete, enabled = !selection.deleting) { Text(stringResource(R.string.delete_photo)) } },
+                    dismissButton = { TextButton(onClick = selection::cancelDelete, enabled = !selection.deleting) { Text(stringResource(R.string.cancel)) } }) }
             }
-            composable("choose-it/{gameId}", arguments = listOf(navArgument("gameId") { type = NavType.StringType })) { entry ->
-                val gameDefinition = games.single { it.type == GameType.CHOOSE_IT }
+            composable("create-game") {
+                val app = LocalContext.current.applicationContext as PuzzleBubblesApplication
+                val model: CreateGameViewModel = viewModel(factory = CreateGameViewModel.Factory(
+                    gameRepository, app.photoRepository, app.soundRepository,
+                    { com.example.puzzlebubbles.data.LocalAudioPlayer(app, app.soundFiles::assetFile) }))
+                CreateGameScreen(model) {
+                    if (navController.currentDestination?.route == "create-game") navController.popBackStack()
+                }
+            }
+            composable("whats-that/play/{gameId}", arguments = listOf(navArgument("gameId") { type = NavType.StringType })) { entry ->
+                val gameDefinition = games.single { it.type == GameType.WHATS_THAT }
                 val gameId = requireNotNull(entry.arguments?.getString("gameId"))
-                val selectedGame = remember(gameRepository, gameId) { gameRepository.getChooseItGame(gameId) }
-                val chooseItViewModel: ChooseItViewModel = viewModel(
-                    factory = ChooseItViewModel.Factory(selectedGame),
+                var attempt by remember { mutableIntStateOf(0) }
+                var selectedGame by remember(gameId) { mutableStateOf<com.example.puzzlebubbles.domain.WhatsThatGame?>(null) }
+                var failed by remember(gameId) { mutableStateOf(false) }
+                LaunchedEffect(gameId, attempt) {
+                    failed = false
+                    try { selectedGame = gameRepository.loadWhatsThatGame(gameId) }
+                    catch (e: kotlinx.coroutines.CancellationException) { throw e }
+                    catch (_: Exception) { failed = true }
+                }
+                if (selectedGame == null) {
+                    Column(screenModifier) {
+                        TextButton(onClick = { navController.popBackStack() }) { Text(stringResource(R.string.back)) }
+                        if (failed) {
+                            Text(stringResource(R.string.game_load_error))
+                            TextButton(onClick = { attempt++ }) { Text(stringResource(R.string.retry)) }
+                        } else CircularProgressIndicator()
+                    }
+                    return@composable
+                }
+                val whatsThatViewModel: WhatsThatViewModel = viewModel(
+                    factory = WhatsThatViewModel.Factory(checkNotNull(selectedGame)),
                 )
-                ChooseItGameScreen(
-                    title = gameDefinition.title,
-                    uiState = chooseItViewModel.uiState,
+                WhatsThatGameScreen(
+                    title = if (gameId == "whats-that") gameDefinition.title else checkNotNull(selectedGame).title,
+                    uiState = whatsThatViewModel.uiState,
                     audioPlayer = audioPlayer,
-                    onAnswer = chooseItViewModel::answer,
-                    onReplay = chooseItViewModel::replayAudio,
-                    onFeedbackFinished = chooseItViewModel::finishFeedback,
+                    onAnswer = whatsThatViewModel::answer,
+                    onReplay = whatsThatViewModel::replayAudio,
+                    onFeedbackFinished = whatsThatViewModel::finishFeedback,
                     onBack = { navController.popBackStack() },
                     onGameComplete = { navController.popBackStack("home", inclusive = false) },
                     modifier = screenModifier,

@@ -84,7 +84,10 @@ class LocalSoundRepository(private val database: PhotoDatabase, private val file
         mutex.withLock {
             check(ready)
             files.file(id)
-            database.withTransaction { dao.delete(id) }
+            database.withTransaction {
+                if (database.games().usesSound(id)) throw com.example.puzzlebubbles.domain.MediaInUseException()
+                dao.delete(id)
+            }
             content.value = content.value.filterNot { it.id == id }
             try { files.remove(files.file(id)) } catch (failure: Exception) { ready = false; throw failure }
         }

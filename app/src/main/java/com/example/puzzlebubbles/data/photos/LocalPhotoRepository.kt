@@ -107,7 +107,10 @@ class LocalPhotoRepository(
         mutex.withLock {
             check(ready) { "Library not ready" }
             images.file(id) // Validate ID before any metadata mutation.
-            database.withTransaction { dao.delete(id) }
+            database.withTransaction {
+                if (database.games().usesPhoto(id)) throw com.example.puzzlebubbles.domain.MediaInUseException()
+                dao.delete(id)
+            }
             revisions.remove(id)
             content.value = content.value.filterNot { it.id == id }
             try { images.remove(images.file(id)) } catch (failure: Exception) {
