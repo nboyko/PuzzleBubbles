@@ -1,217 +1,577 @@
-# Create Custom What's That? Game
+# Manage Existing Custom Games
 
-Verified on 2026-11-06: the single-page editor, media selectors, custom playback,
-protected Library references, game deletion, requested styling, and consistent
-`WhatsThat` naming meet this scope. Build, 18 unit tests, 48 affected emulator
-checks across the rename/finalization runs, and lint (0 errors, 18 warnings)
-passed. See Iteration 2, Phase 7 for runtime/rendering evidence and limitations.
-The requirements below remain the agreed scope; no next feature is planned here.
+Verified on 2026-11-08: swipe/accessibility management, single-page editing,
+atomic updates, preserved identity/order, discard behavior, and the agreed
+icon/color/corner refinements meet this scope. Build, 18 unit tests, lint
+(0 errors, 18 warnings), and affected emulator checks passed. Six swipe and
+end-to-end checks passed again during finalization. See Iteration 2, Phase 8
+for verification details and limitations. No next feature is planned here.
 
-## Goal and scope
+## Goal
 
-Allow a parent to create, play, and delete custom What's That? games using media
-already stored in the Puzzle Bubbles Library. Each saved custom game has 1–10
-questions, played once each as 1–10 rounds. Animals retains its ten-round behavior.
+Allow parents to manage already-created custom **What's That?** games without adding permanent management controls to every game row.
 
-The game-list plus opens one full-screen Create Game editor. Opening it never
-requires enough Library media. Keep the Library-styled blue title, without a
-header Back arrow. Cancel is sufficient. There is no Continue button, step count,
-second editor page, or bottom navigation.
+The normal game row remains focused on its primary purpose:
 
-Use `WhatsThat` consistently for game-specific types, methods, filenames, and
-tests, `whatsthat` for its presentation package, and `WHATS_THAT` for its enum.
-Gameplay uses `whats-that/play/{gameId}` and the cover uses `whats-that-cover`.
-Preserve the existing `whats-that` built-in ID, `whats-that-*` custom IDs, Room
-schema, and Library references. Verify naming changes with build, unit, asset,
-gameplay, navigation/recreation, and custom-game persistence checks.
+**Play the game.**
 
-## Single-page editor
+Management actions are revealed by swiping the row from right to left.
 
-Use one naturally scrolling form containing:
+---
 
-- Game name: initially empty, with the placeholder New Game. Trim before validation
-  and saving; reject blank names. A simple technical limit of 100 characters is
-  sufficient. Duplicate names, including Animals, are allowed; names are not IDs.
-- Images in this game: selected photo thumbnails and a Select photos link. Once
-  any photos are applied, change its text to Edit photos selection.
-  Explain immediately that at least two photos are required for two choices.
-  There is no product-level maximum for the photo pool.
-- Questions: initially no rows. Show Add Question only after the applied photo
-  pool contains at least two photos. This does not require a valid name or any
-  available sounds. There is no separate upfront sound-selection pool.
-- Cancel and Save actions. Preserve usable name editing with the keyboard in
-  landscape and with enlarged text; controls may return after keyboard Done.
+## 1. Normal Game Row
 
-Add Question explicitly creates one empty row. Allow up to ten rows, counting
-incomplete rows. Show the count/limit and disable adding at ten. A row contains
-one correct image and one sound; show which field is missing. Complete rows use
-compact cards with the photo, sound name, preview/progress/duration, and a clear
-way to replace either media choice. Put a small grey X at the top right
-of each question card, positioned relative to the card without increasing the
-heading row height. Use Select sound for an
-empty sound choice. After selection, use a small two-arrow replacement icon at
-the top right of the sound area instead of a Replace sound text button. Its 20dp
-artwork must not add space between the name and progress line. Rows can be deleted, including the last row;
-zero draft rows is valid editing state but cannot be saved.
+A custom game initially appears as a simple row.
 
-Images and sounds may be reused across questions, including identical pairs.
-Do not infer semantic uniqueness or preselect distractors in the editor.
+Conceptually:
 
-Select photos / Edit photos selection and Add Question share an underlined text
-link style with 16sp text, no added button padding or filled background. Keep the
-name input close to the title, with reduced header and editor top padding. Use that style for
-the initial question media-selection links as well. Wizard and game-list controls,
-buttons, links, fields, progress, dialogs, and navigation use blue shades rather
-than violet. The grey question X and the targeted game deletion background
-are deliberate exceptions. Keep other Home/Library screen palettes outside this scope.
+```text
+┌───────────────────────────────┐
+│ 🧩   My Animals               │
+└───────────────────────────────┘
+```
 
-## Media selector modals
+Use:
 
-Select photos / Edit photos selection, Choose correct image, and Select sound open modals over the same
-editor, using matching rounded panels, dimmed backdrop, title, top-right X,
-Cancel, and Done. Do not navigate to separate selection screens or open Android
-Photo Picker. Block interaction with the editor behind a modal.
+- Puzzle icon on the left;
+- game name;
+- existing Puzzle Bubbles row styling.
 
-- The photo-pool selector shows all existing Library photos and supports multiple
-  selection. Reopening preselects the applied pool. Show selection using a blue
-  image outline/highlight, without checkbox graphics on photos.
-- Correct-image selection shows only photos from the applied game pool and allows
-  one selection. Reopening preselects that question's current photo. Use the same
-  highlight-only style, without checkbox graphics.
-- Sound selection shows the existing Sounds Library; there is no game sound pool.
-  Use thin rows with a separate Play/Pause preview, name, non-seekable progress,
-  duration, and a checkbox on the right. Do not use a large Select sound button.
-  Only one sound can be checked; checking another replaces the pending choice.
-  Playing a sound must not select it. Reopening checks the question's sound.
+Do not permanently show Edit or Delete buttons.
+Remove the separate Play icon from both custom and predefined rows. Normal rows
+show only the puzzle icon and name; the whole row is the Play target.
 
-Done applies pending selections to the editor/question. Cancel, X, system Back,
-and backdrop dismissal discard only pending modal changes and retain the editor.
-Done is disabled for a single-choice selector until a choice exists. Once chosen,
-a correct image or sound stays selected until replaced or its question is deleted;
-the last single selection cannot be unchecked to clear the field.
+---
 
-For the photo pool, selection can begin below two. As soon as a pending selection
-reaches two, deselection cannot take it below two within that modal. An applied
-pool of two or more remains protected on reopening. Cancelling discards pending
-choices and their temporary minimum state. Done may apply an initial zero/one-photo
-pool; Add Question and Save remain unavailable until two photos are applied.
+## 2. Tap Behavior
 
-Photos referenced by any existing question cannot be deselected from the pool.
-Explain that the parent must change or delete those questions first. Replacing a
-question's photo releases the old photo only if no other question references it;
-the two-photo minimum still applies. The same reference rule applies to sounds,
-without introducing a sound pool or a sound-deselection control.
+Tapping the normal row starts the game immediately.
 
-Empty Library selectors explain what is missing and where to add it. They do not
-crash, redirect, or close the editor. No inline import/recording or Library shortcut
-is required. Missing sounds must not prevent adding a question after two photos
-are selected.
+```text
+tap game row
+    ↓
+open What's That? gameplay
+```
 
-At most one preview may play. Stop it on selector exit, replacement, question
-removal, Save/Cancel, leaving the editor, or backgrounding. Preserve drafts and
-pending modal selections through rotation; do not preserve active playback.
+This remains the primary interaction.
 
-## Validation, persistence, and recovery
+Do not open an edit/details screen when tapping the row.
 
-Save is enabled only when the trimmed name is nonblank, at least two unique pool
-photos are selected, 1–10 questions exist, every question has a correct photo from
-the pool, and every question has a Library sound. Incomplete fields must explain
-what is missing; avoid a generic Invalid game message.
+---
 
-Generate `whats-that-<UUID suffix>` once per draft, independently of its name.
-Persist name, creation time/order, photo-pool IDs, and question image/sound
-relationships atomically in Room. Preserve existing Photos/Sounds through an
-additive migration. Do not store media blobs or duplicate files. Keep Room
-entities, resource IDs, paths, and URLs out of screens/domain models; use the
-repository and stable Library asset IDs through the rendering/audio boundary.
+## 3. Swipe Gesture
 
-Validate referenced media at commit, coordinating Save with media deletion so
-no dangling references can be committed. Guard repeated Save and conflicting
-editing/navigation while committing. A failure retains the draft for explicit
-retry and must not create duplicate games. Never save automatically.
+Allow a custom game row to be swiped:
 
-Successful Save closes the editor and immediately refreshes the game list. Saved
-games survive restart. Incomplete drafts are not saved games. Process-death draft
-restoration is not required; ordinary activity recreation retains all editor and
-modal state. Backgrounding stops playback but retains the in-memory draft.
+```text
+right → left
+```
 
-## Cancel and discard
+As the user swipes, the row moves horizontally to the left.
 
-Cancel or system Back from the editor exits to Game Selection. An untouched draft
-exits without confirmation. Meaningful changes (name entry, applied photos, added
-or edited questions) require Discard this game? with Keep Editing and Discard.
-Keep Editing preserves all state; Discard drops the draft. Dismissing a media
-selector is not leaving the editor and never prompts to discard the whole game.
-No header Back arrow is shown on Create Game.
+The management actions are revealed underneath it from the right side.
 
-## Game list, playback, and deletion
+Conceptually:
 
-Keep the existing puzzle-icon row style, matching Library list typography,
-padding, and controls. No custom covers. Predefined rows retain explicit built-in
-styling and are first in their existing order. Custom games follow newest first,
-with stable ID as a tie-breaker; names may repeat.
+```text
+before
 
-Game Selection keeps fixed Home/Library navigation, with neither item active and
-no selected bubble/cutout. Home returns Home; Library opens My Library without
-leaving an extra selection destination. Add opens the editor.
+┌───────────────────────────────┐
+│ 🧩   My Animals               │
+└───────────────────────────────┘
 
-Play loads the chosen game by stable ID. Play every question once in shuffled
-order. Each round uses its explicit photo/sound pairing and one random distractor
-from the pool excluding the correct photo, with shuffled presentation. Repeated
-pairs remain separate rounds. Do not persist generated distractors. Keep Animals,
-answer gestures, feedback, Replay, completion timing/audio, recreation, and fresh
-sessions intact. Gameplay Back returns to selection; completion clears gameplay
-and selection and returns Home. Start the first prompt once after the entry
-transition completes, avoiding early playback/Replay races. Stop audio and pending
-work when leaving gameplay; guard rapid Play against duplicate destinations.
 
-Custom rows show Delete immediately before Play; predefined games have no Delete.
-Use the existing delete asset and an accessible label. Delete opens Cancel/Delete
-confirmation and must not trigger Play. Confirmed deletion atomically removes
-only that game's metadata/references, updates the list, and preserves Library
-files. Cancellation/failure keeps the game; failures allow retry. Guard repeated
-and conflicting Delete/Play actions. Identify targets by stable ID, not name.
-Only the game targeted for deletion receives a pale red background with no red
-border, while the
-confirmation is open and during committing. Other rows keep their regular white
-or predefined blue backgrounds even when their actions are temporarily disabled.
-Cancel restores the targeted row; successful deletion removes it. Dialog buttons
-use the same blue palette as the list.
+during swipe
 
-Block Library deletion of photos/sounds referenced by any saved custom game,
-including distractor-only pool photos, at both UI and storage boundaries. Use the
-generic message This photo/sound is used by a custom game. Delete the game first.
-Do not name games or redirect automatically. The parent manually deletes games
-from the list, then deletes media in Library only after no saved references remain.
-Cropping referenced photos remains allowed, retaining identity and changing the
-image used by games. Other Library behavior remains unchanged. Do not cascade-delete
-games when removing media, and do not duplicate media to avoid dependencies.
+┌───────────────────────┐
+│ 🧩   My Animals       │ [Edit] [Delete]
+└───────────────────────┘
 
-## Out of scope
 
-Saved-game editing, draft auto-save/process-death restoration, custom covers,
-extra descriptions/categories/tags/difficulty, game duplication/sharing/networking,
-inline photo import/audio recording, configurable distractors, question sorting or
-drag-and-drop, question labels, and review/summary stages remain outside this feature.
+opened
 
-## Acceptance and verification
+┌───────────────────────┬────────┬────────┐
+│ 🧩   My Animals       │  Edit  │ Delete │
+│                       │ green  │  red   │
+└───────────────────────┴────────┴────────┘
+```
 
-Verify the single editor has no Back arrow, step count, Continue, second page, or
-bottom navigation. Add Question is hidden below two applied photos and visible
-with two even when name/sounds are missing. No initial row is added automatically;
-1–10 complete questions are required only for Save, and all draft rows can be deleted.
+The row itself should remain visible.
 
-Verify all three selectors share modal styling, block background actions, preselect
-current choices, preserve pending choices on rotation, apply only on Done, and
-cancel via Cancel/X/Back/backdrop without changing the applied draft. Check thin
-sound rows, preview without selecting, right-side checkboxes, single choice,
-replacement, referenced-photo locks, the two-photo floor, and shared references.
+Do not swipe the row completely off screen.
 
-Test validation and question limits/reuse, round generation, discard/recreation,
-Save failure/retry/idempotency, persistence/migration, concurrent media deletion,
-list refresh/order, Delete cancellation/failure, shared-reference release, custom
-playback, native audio, and navigation/gesture/completion regressions. Run build,
-unit tests, lint, and affected device tests. Provide useful initial/ready/completed,
-empty/modal/selected and enlarged-text/landscape previews. Render and inspect key
-editor/modal/gameplay layouts on-device when available, including keyboard use.
-Keep known environmental verification limitations explicit; do not suppress failures.
+---
+
+## 4. Swipe Threshold
+
+A small accidental horizontal movement should not open the actions.
+
+Use a reasonable swipe threshold.
+
+If the gesture does not pass the threshold:
+
+```text
+row returns to normal position
+```
+
+If the threshold is passed:
+
+```text
+row settles in the open position
+```
+
+The final open position should expose both action buttons completely.
+
+---
+
+## 5. Only One Open Row
+
+Only one game row may have management actions open at a time.
+
+If Game A is open and the user swipes Game B:
+
+```text
+Game A closes
+Game B opens
+```
+
+Tapping elsewhere in the list should close the currently open row.
+While any row is open, tapping its main area or another game row only closes
+the actions and does not start gameplay. A subsequent tap plays the game.
+
+This prevents multiple rows from remaining partially shifted.
+
+---
+
+# Edit
+
+## 6. Edit Action
+
+The first revealed action is **Edit**.
+
+Use an icon-only pencil action with a very light, almost transparent mint-green
+background and a moderately bright, cool green icon that harmonizes with blue.
+Do not show a visible Edit text label; retain its accessible Edit game label.
+Green Edit and red Delete are deliberate exceptions to the blue palette.
+Keep the editor and other game-list controls blue.
+
+Conceptually:
+
+```text
+[ Edit ]
+ green
+```
+
+The pencil icon identifies Edit independently of its color. Text in the diagrams
+is a description of the action, not a required visible label.
+
+Pressing Edit opens the existing **Create Game wizard** in editing mode.
+
+---
+
+## 7. Reuse the Existing Wizard
+
+Do not create a separate game editor.
+
+Reuse the same single-page editor already used for game creation:
+
+```text
+Game name
+Game image pool
+Questions
+```
+
+The difference is that the wizard is initialized from the saved game.
+Use the title Edit Game, with the existing Cancel/Save actions, media-selection
+modals, validation, and photo-reference/minimum-selection protections. Do not
+introduce steps, a Continue button, or a header Back arrow.
+
+For example:
+
+```text
+saved game
+
+name:
+My Animals
+
+images:
+cat
+dog
+pig
+
+questions:
+cat + cat sound
+dog + dog sound
+```
+
+opens the wizard with all of those values already selected.
+
+---
+
+## 8. Edit Mode
+
+The wizard should know whether it is handling:
+
+```text
+Create
+```
+
+or:
+
+```text
+Edit existing game
+```
+
+In Edit mode:
+
+- preserve the game's existing stable ID;
+- load its current name;
+- load its image pool;
+- load all questions;
+- allow exactly the same validation rules as during creation.
+
+Do not duplicate the game when Save is pressed.
+
+---
+
+## 9. Saving Changes
+
+When editing an existing game:
+
+```text
+Edit
+ ↓
+change data
+ ↓
+Save
+```
+
+Save updates the existing game definition.
+Preserve its original creation time and existing list position: editing an older
+game must not make it appear newly created or move it to the top of the list.
+Update the game and all media associations in one transaction. Removed references
+are released only after Save succeeds; failed Save leaves the stored game intact.
+On failure, show an error and keep the editor open. Do not add persistent draft
+storage or restoration after the editor is closed or the process is lost. Keeping
+the current form visible on failure does not require a separate saved draft.
+
+Keep:
+
+```text
+same game ID
+```
+
+Replace/update:
+
+```text
+name
+image associations
+questions
+```
+
+Do not duplicate photos or sounds.
+
+Continue referencing Library media using their stable IDs.
+
+After Save:
+
+```text
+return to What's That? game list
+```
+
+The row should immediately reflect changes such as a renamed game.
+
+---
+
+## 10. Cancel Editing
+
+If the parent opens Edit but makes no changes:
+
+```text
+Back / Cancel
+→ return to game list
+```
+
+No confirmation is necessary.
+Compare the current values with the originally loaded game. Changes that are
+fully reverted must not trigger discard confirmation.
+
+If meaningful changes were made and the parent tries to exit, reuse the same discard protection as game creation.
+
+For example:
+
+```text
+Discard changes?
+
+Your changes won't be saved.
+
+Keep Editing     Discard
+```
+
+Do not overwrite the saved game until Save succeeds.
+
+---
+
+# Delete
+
+## 11. Delete Action
+
+The second revealed action is **Delete**.
+
+Use an icon-only trash action with a very light, almost transparent rose-red
+background and a moderately bright, cool rose icon that harmonizes with blue.
+Do not show a visible Delete text label; retain its accessible Delete game label.
+
+Conceptually:
+
+```text
+[ Delete ]
+   red
+```
+
+Use the existing Delete/Trash icon. Text in the diagrams describes the action
+rather than a visible label.
+
+Color should reinforce the destructive action, but the icon/action must still be understandable independently of color.
+
+---
+
+## 12. Delete Confirmation
+
+Delete buttons in game, photo, and sound modals use a consistent moderately
+bright red, matching the visual strength of blue Save buttons. Keep the pale
+icon-only swipe actions unchanged.
+
+Do not delete the game immediately when Delete is tapped.
+
+Show confirmation:
+
+```text
+Delete "My Animals"?
+
+This game will be removed.
+Your photos and sounds will stay in Library.
+
+Cancel           Delete
+```
+
+This distinction is important.
+
+Deleting a custom game removes only:
+
+- custom-game metadata;
+- image associations;
+- question definitions.
+
+It must **not delete any Library photos or sounds**.
+
+---
+
+## 13. After Delete
+
+After successful deletion:
+
+```text
+close confirmation
+    ↓
+remove game from list
+```
+
+The row should disappear immediately.
+
+Any media that was protected from deletion only because of this game should become deletable if no other games reference it.
+
+---
+
+# Default Game
+
+## 14. Built-In Default Game
+
+Animals and every future predefined game cannot be edited or deleted. Identify
+predefined games using the existing built-in flag, not a particular name or ID.
+References to Default Game below apply to all predefined games.
+
+Preferred behavior:
+
+```text
+Default Game
+    ↓
+tap → Play
+```
+
+Do not enable swipe management actions for the Default Game.
+
+Only parent-created custom games support:
+
+```text
+swipe → Edit / Delete
+```
+
+---
+
+# Gesture and Tap Interaction
+
+## 15. Avoid Gesture Conflicts
+
+Horizontal swipe and normal tap must coexist cleanly.
+
+A horizontal drag should not accidentally launch the game.
+
+A simple tap should not move the row.
+
+Conceptually:
+
+```text
+tap
+→ Play
+
+horizontal drag
+→ reveal actions
+```
+
+Once actions are open, tapping any game row closes the actions without launching
+gameplay. Only a subsequent tap on a normal row starts a game.
+
+Use consistent behavior across all custom-game rows.
+
+Expose Edit game and Delete game as Android accessibility custom actions on each
+custom-game row, so TalkBack users can manage a game without swiping the row.
+These actions do not add visible buttons or an overflow menu. Edit opens the
+same editor; Delete opens the same confirmation dialog. Predefined rows expose
+neither management action. Preserve the row's accessible Play action.
+
+---
+
+## 16. Animation
+
+Use a short natural horizontal animation when:
+
+- opening actions;
+- closing actions;
+- snapping back after an incomplete swipe.
+
+Avoid springy or exaggerated motion.
+
+The management gesture should feel like a normal list interaction, not like part of the children's gameplay animation language.
+
+---
+
+# Persistence
+
+## 17. Editing
+
+Editing updates the existing persisted custom-game definition.
+
+Do not:
+
+- create a new ID;
+- duplicate media;
+- create a copy of the game.
+
+---
+
+## 18. Deleting
+
+Deleting removes all persistence records owned by the game:
+
+```text
+CustomGame
+GameImage associations
+Questions
+```
+
+Library media remains untouched.
+
+The deletion operation should not leave orphaned game-question or association records.
+
+---
+
+# Explicitly Out of Scope
+
+Do not implement:
+
+- duplicate game;
+- reorder games;
+- custom covers;
+- archive;
+- undo delete;
+- swipe in both directions;
+- additional overflow menus;
+- editing the Default Game;
+- deleting the Default Game.
+
+Keep management to exactly:
+
+```text
+Edit
+Delete
+```
+
+---
+
+# Acceptance Criteria
+
+The feature is complete when:
+
+1. A custom game row normally shows only its icon and name.
+2. Tapping the normal row starts that custom game.
+3. Swiping a custom-game row right-to-left moves the row left.
+4. The swipe reveals exactly two actions.
+5. Edit uses a pencil icon, a very light mint-green background, and no visible text.
+6. Delete uses a trash icon, a very light rose-red background, and no visible text.
+7. An incomplete swipe returns the row to its original position.
+8. A completed swipe settles with both actions visible.
+   While the row is shifted, its right corners are square to meet the action
+   buttons cleanly. Restore the rounded right corners when fully closed.
+9. Only one row may remain open at once.
+10. Opening another row closes the previous one.
+11. Tapping outside an open row closes it.
+12. Horizontal swiping does not accidentally start gameplay.
+13. Edit opens the existing custom-game wizard.
+14. Edit mode pre-populates the existing game name.
+15. Edit mode pre-populates the existing image pool.
+16. Edit mode pre-populates all existing questions.
+17. Editing uses the same validation rules as creation.
+18. Saving edits keeps the same game ID.
+19. Saving edits updates the existing game rather than creating another one.
+20. Unsaved editing does not modify the stored game.
+21. Exiting after meaningful edits asks whether to discard changes.
+22. Delete shows a confirmation dialog.
+23. Confirmation clearly states that Library photos and sounds are retained.
+24. Confirmed deletion removes the custom game.
+25. Deleting a game does not delete its Library media.
+26. The Default Game cannot be swiped for Edit/Delete.
+27. The Default Game remains playable.
+28. Existing creation and gameplay functionality remains unaffected.
+29. The project builds and relevant tests pass.
+30. Neither custom nor predefined rows show a separate Play icon.
+31. Edit uses the single-page editor with the title Edit Game.
+32. Saving edits preserves creation time and list position.
+33. Failed Save shows an error, keeps the editor open, and leaves stored data intact.
+34. Removed media references are released only after a successful atomic update.
+35. Reverting all edits removes the need for discard confirmation.
+36. When a row is open, tapping any game row closes it without starting gameplay.
+37. Custom rows expose accessible Edit game and Delete game actions without requiring a row swipe or adding visible controls; predefined rows do not.
+38. Accessible Delete opens confirmation, and accessible Edit opens the same editor as the revealed Edit button.
+
+---
+
+# Result
+
+Custom games now have two interaction modes:
+
+```text
+TAP
+ ↓
+PLAY
+
+
+SWIPE ←
+ ↓
+┌───────────┬────────┬────────┐
+│ Game      │ Edit   │ Delete │
+│           │ green  │ red    │
+└───────────┴────────┴────────┘
+```
+
+This keeps the normal game list visually simple while still giving parents access to management actions when they need them.

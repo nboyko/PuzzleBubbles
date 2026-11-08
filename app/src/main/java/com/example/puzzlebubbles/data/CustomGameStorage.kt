@@ -32,6 +32,8 @@ interface CustomGameDao {
     @Insert suspend fun insert(game: CustomGameEntity)
     @Insert suspend fun insertImages(images: List<GameImageEntity>)
     @Insert suspend fun insertQuestions(questions: List<GameQuestionEntity>)
+    @Query("UPDATE custom_games SET name = :name WHERE id = :id") suspend fun rename(id: String, name: String)
+    @Query("DELETE FROM game_images WHERE gameId = :id") suspend fun clearImages(id: String)
     @Query("DELETE FROM custom_games WHERE id = :id") suspend fun delete(id: String)
     @Query("SELECT EXISTS(SELECT 1 FROM game_images WHERE photoId = :id)") suspend fun usesPhoto(id: String): Boolean
     @Query("SELECT EXISTS(SELECT 1 FROM game_questions WHERE soundId = :id)") suspend fun usesSound(id: String): Boolean
@@ -55,6 +57,25 @@ class LibraryGameRepository(private val database: PhotoDatabase) : GameRepositor
         return CustomGame(id, row.name, dao.images(id).map { it.photoId },
             dao.questions(id).map { CustomQuestion(it.photoId, it.soundId) })
     }
+    override suspend fun loadCustomGame(id: String): CustomGame {
+        require(bundled.getWhatsThatGames().none { it.id == id }) { "Predefined games cannot be edited" }
+        return database.withTransaction { read(id) ?: error("Game unavailable") }
+    }
+    override suspend fun updateCustomGame(game: CustomGame) {
+        game.validate()
+        require(bundled.getWhatsThatGames().none { it.id == game.id }) { "Predefined games cannot be edited" }
+        database.withTransaction {
+            checkNotNull(database.games().find(game.id)) { "Game unavailable" }
+            check(game.imageIds.all { database.photos().find(it) != null }) { "A selected photo is unavailable" }
+            check(game.questions.all { database.sounds().find(it.soundId) != null }) { "A selected sound is unavailable" }
+            // Keep the original row/creation time. Cascaded question removal and
+            // replacement references are visible together only after commit.
+            database.games().rename(game.id, game.name.trim())
+            database.games().clearImages(game.id)
+            database.games().insertImages(game.imageIds.mapIndexed { i, id -> GameImageEntity(game.id, id, i) })
+            database.games().insertQuestions(game.questions.mapIndexed { i, q -> GameQuestionEntity(game.id, i, q.imageId, q.soundId) })
+        }
+    }
     override suspend fun saveCustomGame(game: CustomGame) {
         game.validate()
         database.withTransaction {
@@ -68,7 +89,7 @@ class LibraryGameRepository(private val database: PhotoDatabase) : GameRepositor
         }
     }
     override suspend fun deleteCustomGame(id: String) {
-        require(id.startsWith("whats-that-")) { "Predefined games cannot be deleted" }
+        require(id.startsWith("whats-that-") && bundled.getWhatsThatGames().none { it.id == id }) { "Predefined games cannot be deleted" }
         database.withTransaction { database.games().delete(id) }
     }
 }

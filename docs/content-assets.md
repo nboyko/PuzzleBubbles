@@ -50,8 +50,8 @@ nested icon folders without a concrete need.
 | `audio/sfx/` | UI/gameplay feedback sounds, separate from content data |
 
 Current source inventory: two PNG covers, the supplied completion background
-`images/game-covers/bubbles-bg.png`, 15 PNG gameplay images, fifteen SVGs (including
-the logo, Photos, close, plus, microphone, pause, stop, delete, and replace icons), ten MP3 prompts in `audio/content/`, and the effects
+`images/game-covers/bubbles-bg.png`, 15 PNG gameplay images, sixteen SVGs (including
+the logo, Photos, close, plus, microphone, pause, stop, delete, replace, and edit icons), ten MP3 prompts in `audio/content/`, and the effects
 `audio/sfx/pop.wav` and `audio/sfx/yay.mp3`. Preserve unreferenced
 gameplay source images; source inventory does not imply that every image is
 already packaged or used by a game.
@@ -87,7 +87,7 @@ unnecessary re-encoding or duplicate exports. Never change an extension without
 converting the actual format.
 
 The current runtime contains two WebP covers, ten 512px gameplay PNGs,
-the unchanged 887 × 1774 completion background `bubbles_bg.png`, fifteen UI/logo vectors,
+the unchanged 887 × 1774 completion background `bubbles_bg.png`, sixteen UI/logo vectors,
 ten `content_*.mp3` prompts, `sfx_pop.wav`, and `sfx_game_complete.mp3`. These
 format/size exceptions are intentional. Existing launcher assets remain in
 Android's drawable/mipmap folders.
@@ -114,6 +114,7 @@ Android's drawable/mipmap folders.
 | `ui-microphone` | `icons/microphone.svg` | `drawable/ic_microphone.xml` |
 | `ui-delete` | `icons/delete.svg` | `drawable/ic_delete.xml` |
 | `ui-replace` | `icons/replace.svg` | `drawable/ic_replace.xml` |
+| `ui-edit` | `icons/edit.svg` | `drawable/ic_edit.xml` |
 | `ui-games` | `icons/games.svg` | `drawable/ic_games.xml` |
 | `ui-trophy` | `icons/trophy.svg` | `drawable/ic_trophy.xml` |
 
@@ -240,6 +241,10 @@ through an additive 3 → 4 migration. A saved game stores its generated
 question photo/sound IDs. Transactions commit these together; foreign keys and
 repository checks reject missing references and protect media from deletion.
 Game deletion releases only its metadata/references and keeps Library files.
+Editing updates the same game row's name and replaces its associations within
+one transaction, retaining its ID and creation time. Removed media references
+are released only on commit; failures roll back the old game and references.
+Editing adds no schema change beyond version 4 and never copies media files.
 Referenced photos remain crop-editable with the same stable ID. No binary data,
 resource IDs, file paths, or duplicated media are stored in the game definition.
 The existing database and `library/` backup/transfer exclusions cover games and

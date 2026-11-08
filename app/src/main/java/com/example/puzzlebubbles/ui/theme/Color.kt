@@ -2,6 +2,8 @@ package com.example.puzzlebubbles.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
+val DeleteActionRed = Color(0xFFB83D50)
+
 val primaryLight = Color(0xFF6D538B)
 val onPrimaryLight = Color(0xFFFFFFFF)
 val primaryContainerLight = Color(0xFFEEDBFF)

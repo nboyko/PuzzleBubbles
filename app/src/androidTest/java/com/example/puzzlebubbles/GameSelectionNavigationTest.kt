@@ -12,6 +12,7 @@ import com.example.puzzlebubbles.ui.theme.PuzzleBubblesTheme
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableStateFlow
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.SemanticsActions
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Rule
@@ -85,6 +86,11 @@ class GameSelectionNavigationTest {
         settle()
         compose.onNodeWithTag("whats-that-selection").assertIsDisplayed()
     }
+    private fun deleteAnotherGame() {
+        val action = compose.onNodeWithContentDescription("Play Another Game").fetchSemanticsNode()
+            .config[SemanticsActions.CustomActions].single { it.label == "Delete game" }
+        compose.runOnIdle { action.action() }
+    }
     private fun play(name: String = "Animals") {
         compose.onNodeWithContentDescription("Play $name").performClick()
         settle()
@@ -140,7 +146,7 @@ class GameSelectionNavigationTest {
     @Test fun deleteMarksOnlyTheTargetRowAndGuardsRepeatedConfirmation() {
         openSelection()
         val pending = SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Pending deletion")
-        compose.onNodeWithContentDescription("Delete game Another Game").performClick()
+        deleteAnotherGame()
         settle()
         compose.onAllNodes(pending).assertCountEquals(1)
         compose.onNodeWithTag("game-row-whats-that-test-fixture").assert(pending)
@@ -150,7 +156,7 @@ class GameSelectionNavigationTest {
         settle()
         compose.onAllNodes(pending).assertCountEquals(0)
         deleteGate = CompletableDeferred()
-        compose.onNodeWithContentDescription("Delete game Another Game").performClick()
+        deleteAnotherGame()
         settle()
         compose.onNodeWithText("Delete").performTouchInput { repeat(3) { click() } }
         settle()
@@ -168,7 +174,7 @@ class GameSelectionNavigationTest {
     @Test fun failedDeletionRetainsTheGameAndAllowsExplicitRetry() {
         openSelection()
         failDelete = true
-        compose.onNodeWithContentDescription("Delete game Another Game").performClick()
+        deleteAnotherGame()
         settle()
         compose.onNodeWithText("Delete").performClick()
         settle()

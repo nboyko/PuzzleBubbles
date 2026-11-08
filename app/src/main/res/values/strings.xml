@@ -1,8 +1,14 @@
 <resources>
     <string name="create_game">Create Game</string>
+    <string name="edit_game">Edit Game</string>
+    <string name="edit_game_action">Edit game</string>
+    <string name="delete_game_action">Delete game</string>
+    <string name="edit_game_name">Edit game %1$s</string>
+    <string name="game_actions_open">Management actions open</string>
+    <string name="discard_changes_title">Discard changes?</string>
+    <string name="delete_game_named">Delete “%1$s”?</string>
     <string name="add_game">Add Game</string>
     <string name="delete_game">Delete game %1$s</string>
-    <string name="delete_game_title">Delete this game?</string>
     <string name="delete_game_message">Your Library photos and sounds will be kept.</string>
     <string name="game_delete_error">Couldn\'t delete this game. Please try again.</string>
     <string name="game_load_error">Couldn\'t open this game. Please try again.</string>

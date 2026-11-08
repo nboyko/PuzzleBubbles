@@ -18,6 +18,7 @@ object LocalImageAssetResolver {
         "ui-stop" -> R.drawable.ic_stop
         "ui-microphone" -> R.drawable.ic_microphone
         "ui-delete" -> R.drawable.ic_delete
+        "ui-edit" -> R.drawable.ic_edit
         "ui-replace" -> R.drawable.ic_replace
         "ui-games" -> R.drawable.ic_games
         "ui-trophy" -> R.drawable.ic_trophy

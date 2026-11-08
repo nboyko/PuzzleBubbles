@@ -1,6 +1,6 @@
 # Iteration 2: Library functionality
 
-Status: **In progress**. Phases 1–7 are verified; the full iteration is not finished
+Status: **In progress**. Phases 1–8 are verified; the full iteration is not finished
 until the user explicitly confirms it.
 
 ## Verified phases
@@ -149,3 +149,35 @@ unrelated to custom-game behavior, and the 5,100 ms validation bound is unchange
 The full device suite is not claimed as passing. Process-death draft restoration
 is not supported. Actual disk-full operation remains unverified; injected failures
 are covered.
+
+### Phase 8: feat manage existing custom games
+
+Game rows now play by tapping without a separate Play icon. A left swipe on a
+custom row reveals pale mint/rose pencil and trash actions, with square adjoining
+row corners. Incomplete swipes close; one row stays open at a time, and the first
+tap on a game row closes open actions. Vertical drags and swipes on predefined
+games do not launch gameplay. Accessible custom actions expose Edit/Delete
+without swiping. Game, photo, and sound modal Delete buttons share a red accent.
+
+Edit Game preloads the existing single-page editor. Save updates the same game
+and associations atomically, preserving creation time and list position. Failed
+saves leave stored data intact and the form open; discarded edits do not write,
+and fully reverted edits need no confirmation. Rotation retains editing state.
+Removed media references are released only on commit; Library files remain.
+Predefined games remain playable and cannot be managed. No schema migration is
+needed, and persistent edit-draft restoration is not supported.
+
+Verified: debug/test builds, 18 unit tests, and lint with zero errors and 18
+warnings. Across implementation checks, 33 affected emulator tests covered
+gestures/accessibility, editing, rollback, reference release, creation, and
+navigation. Three modal deletion regressions passed after the red styling change.
+Six gesture/end-to-end checks passed again during finalization using direct
+instrumentation that preserves emulator app data. A predefined-row swipe/tap
+conflict found during development was fixed and its test passed on rerun.
+Device screenshots of revealed actions at normal/enlarged text, prefilled edit
+mode, and named deletion confirmation were inspected. Edit and revealed-action
+Compose previews compile; IDE preview rendering, physical-device checks, spoken
+TalkBack behavior, and actual disk-full operation remain unverified. Accessibility
+callbacks and injected save failures are automated. This is focused verification,
+not a claim that the full device suite passes; the prior AAC limitation remains
+recorded with Phase 7. Iteration 2 remains open.

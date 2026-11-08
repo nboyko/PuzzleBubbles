@@ -19,6 +19,7 @@ data class CreateGameState(
     val minimumReached: Boolean = false, val editingQuestion: String? = null,
     val loading: Boolean = true, val saving: Boolean = false, val error: WizardError? = null,
     val discard: Boolean = false, val exit: Boolean = false, val changed: Boolean = false,
+    val editing: Boolean = false,
 ) {
     val canAddQuestions get() = imageIds.size >= 2
     val valid get() = name.trim().isNotEmpty() && canAddQuestions && questions.size in 1..10 &&
@@ -47,18 +48,34 @@ sealed interface WizardAction {
 class CreateGameViewModel(
     private val games: GameRepository, private val photoRepository: PhotoRepository,
     private val soundRepository: SoundRepository, private val player: SoundPlayback,
+    private val editGameId: String? = null,
 ) : ViewModel() {
-    var state by mutableStateOf(CreateGameState()); private set
+    var state by mutableStateOf(CreateGameState(editing = editGameId != null)); private set
     val photos = photoRepository.photos
     val sounds = soundRepository.sounds
     val playback = player.playback
-    private val gameId = "whats-that-${UUID.randomUUID()}"
+    private val gameId = editGameId ?: "whats-that-${UUID.randomUUID()}"
+    private data class Values(val name: String, val photos: Set<String>, val questions: List<Pair<String?, String?>>)
+    private fun values() = Values(state.name.trim(), state.imageIds.toSet(), state.questions.map { it.imageId to it.soundId })
+    private var original = values()
+    private fun updateChanged() { state = state.copy(changed = values() != original) }
     init { load() }
 
     private fun load() {
         state = state.copy(loading = true, error = null)
         viewModelScope.launch {
-            try { photoRepository.refresh(); soundRepository.refresh() }
+            try {
+                photoRepository.refresh(); soundRepository.refresh()
+                if (editGameId != null) {
+                    val game = games.loadCustomGame(editGameId)
+                    if (!state.exit) {
+                        state = state.copy(name = game.name, imageIds = game.imageIds,
+                            questions = game.questions.map { QuestionDraft(imageId = it.imageId, soundId = it.soundId) })
+                        original = values()
+                        updateChanged()
+                    }
+                }
+            }
             catch (e: CancellationException) { throw e }
             catch (_: Exception) { state = state.copy(error = WizardError.LOAD) }
             finally { state = state.copy(loading = false) }
@@ -87,6 +104,7 @@ class CreateGameViewModel(
         }
         if (state.selector != null) {
             select(action)
+            updateChanged()
             return
         }
         when (action) {
@@ -109,6 +127,7 @@ class CreateGameViewModel(
             WizardAction.Save -> save()
             else -> Unit
         }
+        updateChanged()
     }
     private fun openQuestionSelector(id: String, selector: GameSelector) {
         val question = state.questions.find { it.id == id } ?: return
@@ -174,7 +193,10 @@ class CreateGameViewModel(
             state.questions.map { CustomQuestion(checkNotNull(it.imageId), checkNotNull(it.soundId)) })
         state = state.copy(saving = true, error = null)
         viewModelScope.launch {
-            try { games.saveCustomGame(game); state = state.copy(exit = true) }
+            try {
+                if (state.editing) games.updateCustomGame(game) else games.saveCustomGame(game)
+                state = state.copy(exit = true)
+            }
             catch (e: CancellationException) { throw e }
             catch (_: Exception) { state = state.copy(error = WizardError.SAVE) }
             finally { state = state.copy(saving = false) }
@@ -182,8 +204,9 @@ class CreateGameViewModel(
     }
     override fun onCleared() { player.release() }
     class Factory(private val games: GameRepository, private val photos: PhotoRepository,
-        private val sounds: SoundRepository, private val player: () -> SoundPlayback) : ViewModelProvider.Factory {
+        private val sounds: SoundRepository, private val editGameId: String? = null,
+        private val player: () -> SoundPlayback) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T =
-            modelClass.cast(CreateGameViewModel(games, photos, sounds, player()))!!
+            modelClass.cast(CreateGameViewModel(games, photos, sounds, player(), editGameId))!!
     }
 }

@@ -1,4 +1,5 @@
 package com.example.puzzlebubbles.presentation.library
+import com.example.puzzlebubbles.ui.theme.DeleteActionRed
 
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.puzzlebubbles.ui.theme.PuzzleBubblesTheme
@@ -183,7 +184,7 @@ private fun PhotoModalContent(
                     if (modal.savedId != null) BubbleButton(
                         onClick = onDelete,
                         text = stringResource(R.string.delete_photo),
-                        colors = listOf(Color(0xFF9251B7)), enabled = !busy, modifier = Modifier.weight(1f),
+                          colors = listOf(DeleteActionRed), enabled = !busy, modifier = Modifier.weight(1f),
                     )
                     BubbleButton(onClick = onSave, text = stringResource(R.string.save_photo), enabled = !busy,
                         colors = listOf(PhotoBlue), modifier = Modifier.weight(1f))

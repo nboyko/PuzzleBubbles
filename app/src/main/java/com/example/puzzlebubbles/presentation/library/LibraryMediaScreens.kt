@@ -1,4 +1,5 @@
 package com.example.puzzlebubbles.presentation.library
+import com.example.puzzlebubbles.ui.theme.DeleteActionRed
 
 import android.Manifest
 import android.app.Activity
@@ -243,7 +244,7 @@ private fun SoundsContent(
                 BubbleButton(onClick = onDeleteCancel, text = stringResource(R.string.cancel), enabled = !state.deleting,
                     colors = listOf(SoundAccent), modifier = Modifier.weight(1f))
                 BubbleButton(onClick = onDelete, text = stringResource(R.string.delete_sound), enabled = !state.deleting,
-                    colors = listOf(SoundAccent), modifier = Modifier.weight(1f))
+                    colors = listOf(DeleteActionRed), modifier = Modifier.weight(1f))
             }
         }
     }

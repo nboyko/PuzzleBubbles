@@ -79,11 +79,13 @@ internal fun CreateGameContent(state: CreateGameState, photos: List<LibraryPhoto
             .background(Color(0xFFF0F7FF)).safeDrawingPadding().imePadding()) {
             val compactEditing = maxHeight < 300.dp && WindowInsets.ime.getBottom(LocalDensity.current) > 0
             Column(Modifier.fillMaxSize().testTag("create-game")) {
-                if (!compactEditing) Text(stringResource(R.string.create_game), fontFamily = GameTitleFontFamily,
+                if (!compactEditing) Text(stringResource(if (state.editing) R.string.edit_game else R.string.create_game), fontFamily = GameTitleFontFamily,
                     fontSize = 32.sp, color = WizardAccent, modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp).semantics { heading() })
                 if (state.loading || state.saving) LinearProgressIndicator(Modifier.fillMaxWidth())
                 if (state.error == WizardError.LOAD || state.error == WizardError.SAVE) {
-                    Text(stringResource(if (state.error == WizardError.LOAD) R.string.game_library_load_error else R.string.game_save_error),
+                    Text(stringResource(if (state.error == WizardError.LOAD) {
+                        if (state.editing) R.string.game_load_error else R.string.game_library_load_error
+                    } else R.string.game_save_error),
                         color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(16.dp))
                     if (state.error == WizardError.LOAD) TextButton(onClick = { act(WizardAction.Retry) }, enabled = !state.loading) { Text(stringResource(R.string.retry)) }
                 }
@@ -126,7 +128,7 @@ internal fun CreateGameContent(state: CreateGameState, photos: List<LibraryPhoto
         }
         if (state.selector != null) MediaSelectorModal(state, photos, sounds, playback, act)
         if (state.discard) AlertDialog(onDismissRequest = { act(WizardAction.Keep) },
-            title = { Text(stringResource(R.string.discard_game_title)) }, text = { Text(stringResource(R.string.discard_game_message)) },
+            title = { Text(stringResource(if (state.editing) R.string.discard_changes_title else R.string.discard_game_title)) }, text = { Text(stringResource(R.string.discard_game_message)) },
             confirmButton = { TextButton(onClick = { act(WizardAction.Discard) }) { Text(stringResource(R.string.discard_game)) } },
             dismissButton = { TextButton(onClick = { act(WizardAction.Keep) }) { Text(stringResource(R.string.keep_editing)) } })
     }
@@ -302,6 +304,11 @@ private fun readyPreview() = CreateGameState(name = "Family", imageIds = preview
 
 @Preview(name = "Ready to add questions", widthDp = 360, heightDp = 800)
 @Composable private fun ReadyEditorPreview() { PuzzleBubblesTheme { CreateGameContent(readyPreview(), previewPhotos, previewSounds, SoundPlaybackState(), {}) } }
+@Preview(name = "Edit existing game", widthDp = 360, heightDp = 800)
+@Composable private fun EditGamePreview() { PuzzleBubblesTheme {
+    CreateGameContent(readyPreview().copy(editing = true, questions = listOf(QuestionDraft("preview", "cat-image", "preview-sound"))),
+        previewPhotos, previewSounds, SoundPlaybackState(), {})
+} }
 @Preview(name = "Photo selection modal", widthDp = 360, heightDp = 800)
 @Composable private fun PhotoModalPreview() { PuzzleBubblesTheme { CreateGameContent(readyPreview().copy(selector = GameSelector.PHOTOS, pendingImages = previewPhotos.map { it.id }.toSet()), previewPhotos, previewSounds, SoundPlaybackState(), {}) } }
 @Preview(name = "Sound selection modal", widthDp = 360, heightDp = 800)

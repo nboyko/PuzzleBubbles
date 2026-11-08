@@ -17,10 +17,19 @@ This overview describes the current checkout, not iteration acceptance.
   Custom games play every question once with a random distinct distractor from
   their photo pool. Gameplay Back returns to selection; completion returns Home.
   Selection has fixed Home/Library navigation with neither item active.
-- Custom-game Delete precedes Play and requires confirmation. It removes only
+- Game rows show a puzzle icon and name; tapping plays. Swiping a custom row left
+  reveals pale mint/rose pencil and trash actions. Only one row stays open;
+  tapping any game row first closes open actions. TalkBack custom actions provide
+  Edit/Delete without a swipe. Predefined games have neither management action.
+  Edit Game preloads the same single-page editor. Saving updates the existing ID
+  and references atomically, preserving creation time and list position. Failed
+  saves show an error without closing the editor or changing stored data; reverting
+  edits avoids discard confirmation. No persistent edit draft is stored.
+- Custom-game Delete requires named confirmation. It removes only
   that game's metadata and references. Referenced Library photos and recordings
   cannot be deleted until their games are manually removed; cropping remains
-  available. Predefined games cannot be deleted. Saved-game editing is not offered.
+  available. Delete buttons in game, photo, and sound modals use a consistent red.
+  Predefined games cannot be edited or deleted.
 - Home and My Library share a fixed bottom navigation bar with labeled icons
   and a raised bubble around the active icon. There are no top tabs.
 - My Library has Photos and Sounds destinations with Back to My Library and
@@ -73,7 +82,7 @@ One Android `app` module, with sources under
 
 - `presentation/`: Compose screens, ViewModels, and Navigation Compose routes
   (`home`, `library`, `library/photos`, `library/sounds`, `whats-that`,
-  `whats-that/play/{gameId}`, `create-game`, `matching`);
+  `whats-that/play/{gameId}`, `create-game`, `edit-game/{gameId}`, `matching`);
   game screens are grouped by mechanic. Photos and Sounds have destination-scoped
   ViewModels and consume stable asset IDs.
 - `domain/`: catalog/content models and pure session generation/state transitions.

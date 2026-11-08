@@ -83,6 +83,34 @@ class CustomGameStorageTest {
         assertEquals(game.playable(), games.loadWhatsThatGame(game.id))
         assertTrue(db.games().usesPhoto(ids[2]))
     }
+    @Test fun editingIsAtomicPreservesOrderAndReleasesOnlyRemovedReferences() = runBlocking {
+        val original = game(); games.saveCustomGame(original)
+        val newer = game(); games.saveCustomGame(newer)
+        val before = db.games().find(original.id)!!
+        val order = games.observeWhatsThatGames().first().map { it.id }
+        val edited = original.copy(name = "Renamed", imageIds = ids.take(2),
+            questions = listOf(CustomQuestion(ids[1], soundId), CustomQuestion(ids[1], soundId)))
+        db.openHelper.writableDatabase.execSQL("CREATE TRIGGER fail_edit BEFORE INSERT ON game_questions BEGIN SELECT RAISE(ABORT, 'injected failure'); END")
+        assertTrue(runCatching { games.updateCustomGame(edited) }.isFailure)
+        assertEquals(original, games.loadCustomGame(original.id))
+        assertEquals(before, db.games().find(original.id))
+        assertTrue(db.games().usesPhoto(ids[2]))
+        db.openHelper.writableDatabase.execSQL("DROP TRIGGER fail_edit")
+        games.updateCustomGame(edited)
+        assertEquals(edited, LibraryGameRepository(db).loadCustomGame(original.id))
+        assertEquals(before.createdAt, db.games().find(original.id)!!.createdAt)
+        assertEquals(order, games.observeWhatsThatGames().first().map { it.id })
+        assertTrue(db.games().usesPhoto(ids[2])) // Still shared by the other game.
+        games.deleteCustomGame(newer.id)
+        assertFalse(db.games().usesPhoto(ids[2]))
+        photos.delete(ids[2])
+        assertTrue(images.file(ids[0]).exists()); assertTrue(audio.file(soundId).exists())
+        assertEquals(2, games.loadWhatsThatGame(original.id).questions.size)
+        assertTrue(runCatching { games.updateCustomGame(edited.copy(id = "whats-that")) }.isFailure)
+        assertTrue(runCatching { games.loadCustomGame("whats-that") }.isFailure)
+        games.deleteCustomGame(original.id)
+        assertTrue(runCatching { games.updateCustomGame(edited) }.isFailure)
+    }
     @Test fun mediaDeleteRacingSaveCannotLeaveDanglingReferences() = runBlocking {
         val game = game()
         val save = async(Dispatchers.IO) { runCatching { games.saveCustomGame(game) } }

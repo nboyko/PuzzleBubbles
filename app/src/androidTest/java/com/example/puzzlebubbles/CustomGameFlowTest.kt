@@ -21,7 +21,11 @@ class CustomGameFlowTest {
     private val ownedPhotos = mutableListOf<LibraryPhoto>()
     private var sound: LibrarySound? = null
     private var gameId: String? = null
-    private val name = "Family ${UUID.randomUUID().toString().take(6)}"
+    private var name = "Family ${UUID.randomUUID().toString().take(6)}"
+    private fun revealActions() {
+        compose.onNodeWithContentDescription("Play $name").performScrollTo().performTouchInput { swipeLeft() }
+        compose.waitForIdle()
+    }
     private fun capture(name: String) {
         compose.mainClock.advanceTimeBy(500)
         compose.waitForIdle()
@@ -103,19 +107,34 @@ class CustomGameFlowTest {
         gameId = runBlocking { app.gameRepository.observeWhatsThatGames().first().single { it.name == name }.id }
         compose.onNodeWithContentDescription("Delete game Animals").assertDoesNotExist()
         capture("game-list")
+        revealActions()
+        compose.onNodeWithContentDescription("Edit game $name").performClick()
+        compose.onNodeWithText("Edit Game").assertIsDisplayed()
+        compose.waitUntil(5000) { compose.onAllNodes(hasSetTextAction() and isEnabled()).fetchSemanticsNodes().isNotEmpty() }
+        capture("edit-game")
+        val renamed = "$name edited"
+        compose.onNode(hasSetTextAction()).performTextReplacement(renamed)
+        closeSoftKeyboard()
+        compose.onNodeWithText("Save").performClick()
+        compose.waitUntil(5000) { compose.onAllNodesWithContentDescription("Play $renamed").fetchSemanticsNodes().isNotEmpty() }
+        name = renamed
+        assertEquals(gameId, runBlocking { app.gameRepository.observeWhatsThatGames().first().single { it.name == name }.id })
         compose.onNodeWithContentDescription("Play $name").performScrollTo().performClick()
         compose.onNodeWithContentDescription("Round 1 of 1").assertIsDisplayed()
         capture("custom-gameplay")
         compose.onNodeWithContentDescription(ownedPhotos[0].id).performClick()
         compose.waitUntil(10000) { compose.onAllNodesWithTag("home-content").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("What's That?").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("Delete game $name").assertDoesNotExist()
+        revealActions()
+        val editBounds = compose.onNodeWithContentDescription("Edit game $name").fetchSemanticsNode().boundsInRoot
         val deleteBounds = compose.onNodeWithContentDescription("Delete game $name").fetchSemanticsNode().boundsInRoot
-        val playBounds = compose.onNodeWithContentDescription("Play $name").fetchSemanticsNode().boundsInRoot
-        assertTrue(deleteBounds.right <= playBounds.left)
+        assertTrue(editBounds.right <= deleteBounds.left)
         compose.onNodeWithContentDescription("Delete game $name").performScrollTo().performClick()
         capture("delete-game-confirmation")
         compose.onNodeWithText("Cancel").performClick()
         compose.onNodeWithContentDescription("Play $name").assertExists()
+        revealActions()
         compose.onNodeWithContentDescription("Delete game $name").performClick()
         compose.onNodeWithText("Delete").performClick()
         compose.waitUntil(5000) { compose.onAllNodesWithContentDescription("Play $name").fetchSemanticsNodes().isEmpty() }

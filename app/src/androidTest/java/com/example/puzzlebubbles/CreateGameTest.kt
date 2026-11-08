@@ -53,15 +53,25 @@ class CreateGameTest {
     private var gate: CompletableDeferred<Unit>? = null
     private val saves = mutableListOf<CustomGame>()
     private var exits = 0
+    private var editId: String? = null
+    private var stored: CustomGame? = null
+    private val updates = mutableListOf<CustomGame>()
     private val enlarged = mutableStateOf(false)
     private val games = object : GameRepository by LocalGameRepository() {
+        override suspend fun loadCustomGame(id: String) = checkNotNull(stored).also { check(it.id == id) }
+        override suspend fun updateCustomGame(game: CustomGame) {
+            updates += game; gate?.await()
+            if (fail) error("disk full")
+            stored = game
+        }
         override suspend fun saveCustomGame(game: CustomGame) {
             saves += game; gate?.await()
             if (fail) error("disk full")
         }
     }
     private fun show(activity: MainActivity) {
-        model = ViewModelProvider(activity, CreateGameViewModel.Factory(games, photos, sounds) { player })[CreateGameViewModel::class.java]
+        model = ViewModelProvider(activity, CreateGameViewModel.Factory(games, photos, sounds, editId) { player })[
+            editId ?: "create", CreateGameViewModel::class.java]
         activity.setContent { PuzzleBubblesTheme {
             val density = LocalDensity.current
             CompositionLocalProvider(LocalPhotoImages provides (activity.application as PuzzleBubblesApplication).photoImages,
@@ -78,6 +88,52 @@ class CreateGameTest {
         val q = model.state.questions.single().id
         act(WizardAction.EditImage(q)); act(WizardAction.Photo(ids[0])); act(WizardAction.Done)
         act(WizardAction.EditSound(q)); act(WizardAction.Sound(sound.id)); act(WizardAction.Done)
+    }
+    private fun openEdit(): CustomGame {
+        val game = CustomGame("whats-that-existing", "Original", ids,
+            listOf(CustomQuestion(ids[0], sound.id), CustomQuestion(ids[0], secondSound.id)))
+        stored = game; editId = game.id
+        compose.activityRule.scenario.onActivity(::show); compose.waitForIdle()
+        return game
+    }
+    @Test fun editLoadsExistingValuesAndRevertedChangesExitWithoutConfirmation() {
+        val original = openEdit()
+        compose.onNodeWithText("Edit Game").assertIsDisplayed()
+        assertEquals(original.imageIds, model.state.imageIds)
+        assertEquals(original.questions.map { it.soundId }, model.state.questions.map { it.soundId })
+        assertFalse(model.state.changed)
+        act(WizardAction.Name("Changed")); act(WizardAction.Name(original.name))
+        act(WizardAction.EditImage(model.state.questions[0].id)); act(WizardAction.Photo(ids[0])); act(WizardAction.Done)
+        act(WizardAction.Photos); act(WizardAction.Photo(ids[2])); act(WizardAction.Done)
+        assertTrue(model.state.changed)
+        act(WizardAction.Photos); act(WizardAction.Photo(ids[2])); act(WizardAction.Done)
+        assertFalse(model.state.changed)
+        act(WizardAction.Cancel)
+        assertEquals(1, exits); assertTrue(updates.isEmpty()); assertEquals(original, stored)
+    }
+    @Test fun failedEditSaveStaysOpenAndGuardedRetryUpdatesTheSameGame() {
+        val original = openEdit()
+        act(WizardAction.Name("Renamed")); fail = true
+        act(WizardAction.Save)
+        compose.onNodeWithText("Couldn't save this game. Check available storage and selected media, then try Save again.").assertIsDisplayed()
+        assertEquals(original, stored); assertEquals(0, exits)
+        assertEquals("Renamed", model.state.name)
+        fail = false; gate = CompletableDeferred()
+        act(WizardAction.Save); act(WizardAction.Save); act(WizardAction.Back)
+        assertEquals(2, updates.size); assertTrue(model.state.saving)
+        compose.runOnIdle { gate!!.complete(Unit) }; compose.waitForIdle()
+        assertEquals(original.copy(name = "Renamed"), stored)
+        assertTrue(saves.isEmpty()); assertEquals(1, exits)
+    }
+    @Test fun editRotationPreservesChangesAndDiscardDoesNotWrite() {
+        val original = openEdit()
+        act(WizardAction.Name("Changed"))
+        compose.activityRule.scenario.recreate(); compose.activityRule.scenario.onActivity(::show); compose.waitForIdle()
+        assertEquals("Changed", model.state.name)
+        act(WizardAction.Back)
+        compose.onNodeWithText("Discard changes?").assertIsDisplayed()
+        compose.onNodeWithText("Discard").performClick(); compose.waitForIdle()
+        assertEquals(original, stored); assertTrue(updates.isEmpty()); assertEquals(1, exits)
     }
     @Test fun emptyLibrariesAllowEntryAndExplainMissingContent() {
         compose.runOnIdle { photos.photos.value = emptyList(); sounds.sounds.value = emptyList() }

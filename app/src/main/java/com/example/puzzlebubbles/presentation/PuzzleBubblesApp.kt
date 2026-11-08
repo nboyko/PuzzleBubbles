@@ -1,4 +1,5 @@
 package com.example.puzzlebubbles.presentation
+import com.example.puzzlebubbles.ui.theme.DeleteActionRed
 
 import android.app.Activity
 import android.net.Uri
@@ -121,6 +122,12 @@ fun PuzzleBubblesApp(
                     onRetry = selection::reload,
                     enabled = !selection.deleting && selection.deleteId == null,
                     onDelete = selection::requestDelete,
+                    onEdit = { gameId ->
+                        if (!selection.deleting && selection.deleteId == null &&
+                            selection.games.any { it.id == gameId && !it.isBuiltIn } &&
+                            navController.currentDestination?.route == "whats-that")
+                            navController.navigate("edit-game/${Uri.encode(gameId)}") { launchSingleTop = true }
+                    },
                     onAdd = {
                         if (!selection.deleting && selection.deleteId == null && navController.currentDestination?.route == "whats-that")
                             navController.navigate("create-game") { launchSingleTop = true }
@@ -141,18 +148,29 @@ fun PuzzleBubblesApp(
                     },
                 )
                 if (selection.deleteId != null) BlueGameTheme { AlertDialog(onDismissRequest = selection::cancelDelete,
-                    title = { Text(stringResource(R.string.delete_game_title)) },
+                    title = { Text(stringResource(R.string.delete_game_named, selection.games.firstOrNull { it.id == selection.deleteId }?.name.orEmpty())) },
                     text = { Text(stringResource(if (selection.deleteError) R.string.game_delete_error else R.string.delete_game_message)) },
-                    confirmButton = { TextButton(onClick = selection::delete, enabled = !selection.deleting) { Text(stringResource(R.string.delete_photo)) } },
+                    confirmButton = { TextButton(onClick = selection::delete, enabled = !selection.deleting,
+                        colors = ButtonDefaults.textButtonColors(contentColor = DeleteActionRed)) { Text(stringResource(R.string.delete_photo)) } },
                     dismissButton = { TextButton(onClick = selection::cancelDelete, enabled = !selection.deleting) { Text(stringResource(R.string.cancel)) } }) }
             }
             composable("create-game") {
                 val app = LocalContext.current.applicationContext as PuzzleBubblesApplication
                 val model: CreateGameViewModel = viewModel(factory = CreateGameViewModel.Factory(
                     gameRepository, app.photoRepository, app.soundRepository,
-                    { com.example.puzzlebubbles.data.LocalAudioPlayer(app, app.soundFiles::assetFile) }))
+                    player = { com.example.puzzlebubbles.data.LocalAudioPlayer(app, app.soundFiles::assetFile) }))
                 CreateGameScreen(model) {
                     if (navController.currentDestination?.route == "create-game") navController.popBackStack()
+                }
+            }
+            composable("edit-game/{gameId}", arguments = listOf(navArgument("gameId") { type = NavType.StringType })) { entry ->
+                val app = LocalContext.current.applicationContext as PuzzleBubblesApplication
+                val model: CreateGameViewModel = viewModel(factory = CreateGameViewModel.Factory(
+                    gameRepository, app.photoRepository, app.soundRepository,
+                    editGameId = requireNotNull(entry.arguments?.getString("gameId")),
+                    player = { com.example.puzzlebubbles.data.LocalAudioPlayer(app, app.soundFiles::assetFile) }))
+                CreateGameScreen(model) {
+                    if (navController.currentDestination?.route == "edit-game/{gameId}") navController.popBackStack()
                 }
             }
             composable("whats-that/play/{gameId}", arguments = listOf(navArgument("gameId") { type = NavType.StringType })) { entry ->

@@ -214,8 +214,9 @@ Add Game, and it opens the custom-game editor described below.
 
 The repository supplies the list and explicitly identifies the built-in entry.
 That row uses a slightly tinted background and bold accent-colored text. Other
-entries use white backgrounds and regular-weight text. Use the existing puzzle
-and Play assets for every row. Only the predefined Animals entry is required now;
+entries use white backgrounds and regular-weight text. Rows show the puzzle icon
+and name without a separate Play icon; tapping a normal row starts gameplay.
+Only the predefined Animals entry is required now;
 additional predefined games may be added later. Custom examples belong only in
 previews and tests.
 
@@ -230,7 +231,7 @@ The built-in game has ID `whats-that`. Custom games use
 `whats-that-<unique suffix>`, generated once and retained through edits; random UUID
 suffixes are recommended rather than hashes of mutable names or content.
 Custom-game creation, persistence, and gameplay extend this navigation as
-described below; saved-game editing remains outside the agreed feature.
+described below, including management of existing custom games.
 
 The subsequent agreed **Create Custom What's That? Game Wizard** feature enables
 creation and playback from this list. Its full-screen single-page editor has a
@@ -250,7 +251,13 @@ sits closer to the title. Question cards have a small grey X anchored to the
 top right independently of the heading, a Select sound link when empty, and a
 20dp two-arrow replacement icon at the top right of selected sound content that
 does not increase the gap above the progress line. Wizard and game-list controls use blue
-shades, including dialogs and list navigation. Only the game targeted for deletion
+shades, including dialogs and list navigation, except for icon-only Edit and
+Delete actions revealed by swiping custom rows. Use almost transparent mint/rose
+backgrounds and moderately bright cool green/rose pencil/trash icons that harmonize
+with blue. Preserve accessible text labels without visible action text.
+Delete buttons inside game, photo, and sound modals use a consistent red with
+brightness and saturation comparable to the blue Save action.
+Only the game targeted for deletion
 receives a pale red deletion background without a border; other disabled rows retain their normal backgrounds.
 Question-referenced photos cannot be deselected from the pool until all those
 references are deleted or replaced. Single-choice photo/sound selections can be
@@ -261,11 +268,25 @@ distractor from the selected image pool; Animals retains ten rounds. Media may
 be reused across questions. Persist complete games and stable Library references
 atomically in Room without copying files. Referenced pool photos and question
 sounds cannot be deleted; photo cropping remains allowed. Use a generic
-"Delete the game first" explanation without game names. Custom-game rows have a
-Delete icon before Play, with confirmation. Deletion removes the game and its
+"Delete the game first" explanation without game names. Custom-game rows reveal
+Edit followed by Delete on a right-to-left swipe, without leaving the screen.
+An incomplete swipe snaps closed; a completed swipe exposes both actions and
+keeps part of the main row visible. Square the shifted row's right corners to
+join the actions, restoring rounding when closed. Only one row may be open. Tapping any game
+row while actions are open closes them without launching gameplay; tapping
+elsewhere in the list also closes them. Vertical scrolling and horizontal swipes
+must not launch a game. TalkBack custom actions expose Edit/Delete without
+requiring a row swipe or adding visible controls. Predefined rows have no management
+gesture or accessibility actions. Delete requires named confirmation that Library
+media is retained. Deletion removes the game and its
 references atomically, preserving Library files; media can then be deleted manually
 only when no saved game still references it. Predefined games cannot be deleted.
-Saved-game editing remains outside this feature. Preserve drafts through rotation, confirm discarding meaningful
+Edit Game reuses the single-page editor and preloads all saved values. Save
+atomically updates the same game and its references, preserving creation time and
+list position. Release removed media references only after commit; failure shows
+an error and keeps the editor open with the stored game unchanged. Compare the
+form with its loaded values so reverted edits do not require discard confirmation.
+No persistent editing draft is required. Preserve drafts through rotation, confirm discarding meaningful
 changes, and retain drafts after Save failure for explicit retry. Process-death
 draft restoration is not required. See [the plan](plan.md) for acceptance criteria.
 
