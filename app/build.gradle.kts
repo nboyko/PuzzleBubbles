@@ -8,11 +8,11 @@ plugins {
 ksp { arg("room.schemaLocation", "$projectDir/schemas") }
 
 android {
-    namespace = "com.example.puzzlebubbles"
+    namespace = "eu.bfss.puzzlebubbles"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.puzzlebubbles"
+        applicationId = "eu.bfss.puzzlebubbles"
         minSdk = 26
         targetSdk = 36
         versionCode = 1

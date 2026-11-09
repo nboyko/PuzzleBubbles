@@ -59,7 +59,7 @@ Short screen recordings (MP4) from the [v0.1.0 release](https://github.com/nboyk
 
 ## Architecture
 
-One Android `app` module under `app/src/main/java/com/example/puzzlebubbles/`:
+One Android `app` module under `app/src/main/java/eu/bfss/puzzlebubbles/`:
 
 - `presentation/` — Compose screens, ViewModels, and navigation, grouped by game.
 - `domain/` — content models, repository contracts, and pure session logic. Static
