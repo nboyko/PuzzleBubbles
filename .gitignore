@@ -19,3 +19,11 @@ build/
 /.idea/copilot.data.migration.ask2agent.xml
 /.idea/studiobot.xml
 /.idea/migrations.xml
+
+# Release signing keys and their credentials (never commit)
+*.jks
+*.keystore
+keystore.properties
+
+# Signed release outputs from Android Studio's wizard
+/app/release/
