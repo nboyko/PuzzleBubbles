@@ -19,14 +19,20 @@ excluded from cloud backup, so personal family media never leaves the device.
 
 ## Demo
 
-Short screen recordings (MP4) from the [v0.1.0 release](https://github.com/nboyko/PuzzleBubbles/releases/tag/v0.1.0):
+Screen recordings of the [v0.1.0 release](https://github.com/nboyko/PuzzleBubbles/releases/tag/v0.1.0).
 
-- [Add photos and record sounds in the Library](https://github.com/nboyko/PuzzleBubbles/releases/download/v0.1.0/add_to_lib.mp4)
-  — import and crop a photo, record a prompt in a parent's voice.
-- [Play a custom game](https://github.com/nboyko/PuzzleBubbles/releases/download/v0.1.0/play_custom_game.mp4)
-  — hear the recorded prompt and choose the matching photo.
-- [Edit and delete a custom game](https://github.com/nboyko/PuzzleBubbles/releases/download/v0.1.0/edit_delete_game.mp4)
-  — swipe a game to change its questions or remove it.
+**Add photos and record sounds in the Library** — import and crop a photo, record a
+prompt in a parent's voice.
+
+https://github.com/user-attachments/assets/5adfeee2-6c1f-4bc2-bc96-9cf0c255b9d8
+
+**Play a custom game** — hear the recorded prompt and choose the matching photo.
+
+https://github.com/user-attachments/assets/a10e4dc3-b937-4537-93ba-e21b29dfe16c
+
+**Edit and delete a custom game** — swipe a game to change its questions or remove it.
+
+https://github.com/user-attachments/assets/0d48a855-880f-4740-a05f-f374952aa0f5
 
 ## Features
 
