@@ -8,9 +8,8 @@ that the full iteration is finished.
 ### Phase 1: feat home page
 
 Home displays large image cards for What's That? and Match Up, with direct game
-routing and Back navigation. It uses the app's logo, typography, and bubble
-styling. Fixed Home/Library navigation highlights the active destination and
-preserves Home scroll position. Match Up remains a placeholder.
+routing and Back navigation. Fixed Home/Library navigation preserves Home
+scroll position. Match Up remains a placeholder.
 
 ### Phase 2: feat What's That? game
 
@@ -25,8 +24,7 @@ separate; leaving the game cancels its effects and playback.
 
 Recorded checks include the debug build, six unit tests, device coverage for game
 entry, Back, recreation, scroll restoration, completion audio, and cancellation,
-and lint without errors. Broader device/API coverage remains unverified; glow
-uses Android 12+ blur with sharp fallbacks on older APIs.
+and lint without errors. Broader device/API coverage remains unverified.
 
 Library functionality is tracked in [Iteration 2](002-iteration.md).
 Match Up gameplay is outside these verified phases. See [README](../../README.md)

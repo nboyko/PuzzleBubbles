@@ -1,158 +1,110 @@
 # Puzzle Bubbles
 
-Native Android educational game built with Kotlin and Jetpack Compose.
-This overview describes the current checkout, not iteration acceptance.
+Native Android educational game for toddlers, built with Kotlin and Jetpack Compose.
 
-## Current behavior
+## Why this app
 
-- Home shows image cards for **What's That?** and **Match Up**
-  (Matching), with Baloo 2 headings and Lilita One card titles.
-- What's That? lists predefined **Animals** first, followed by saved custom games.
-  Add Game opens a single-page editor using Library photos and recordings. Select
-  at least two photos, then add 1–10 explicit image/sound questions. Media selectors
-  are modals with pending choices applied on Done. Referenced photos and the
-  two-photo minimum are protected; questions can be removed or have media replaced.
-  Save validates complete questions and persists the game; Cancel confirms discarding
-  a changed draft. Rotation retains drafts, and failed saves allow explicit retry.
-  Custom games play every question once with a random distinct distractor from
-  their photo pool. Gameplay Back returns to selection; completion returns Home.
-  Selection has fixed Home/Library navigation with neither item active.
-- Game rows show a puzzle icon and name; tapping plays. Swiping a custom row left
-  reveals pale mint/rose pencil and trash actions. Only one row stays open;
-  tapping any game row first closes open actions. TalkBack custom actions provide
-  Edit/Delete without a swipe. Predefined games have neither management action.
-  Edit Game preloads the same single-page editor. Saving updates the existing ID
-  and references atomically, preserving creation time and list position. Failed
-  saves show an error without closing the editor or changing stored data; reverting
-  edits avoids discard confirmation. No persistent edit draft is stored.
-- Custom-game Delete requires named confirmation. It removes only
-  that game's metadata and references. Referenced Library photos and recordings
-  cannot be deleted until their games are manually removed; cropping remains
-  available. Delete buttons in game, photo, and sound modals use a consistent red.
-  Predefined games cannot be edited or deleted.
-- Home and My Library share a fixed bottom navigation bar with labeled icons
-  and a raised bubble around the active icon. There are no top tabs.
-- My Library has Photos and Sounds destinations with Back to My Library and
-  fixed Home/Library navigation. Photos shows saved images or an empty state,
-  with a plus button beside its title.
-  No sample media is added. Home scroll position and navigation survive recreation.
-- Add Photo selects one image through Android's system picker and opens a
-  square crop editor in a modal. Pan/pinch adjusts the crop; Save stores a
-  1024 × 1024 WebP and X, Back, or the backdrop discards unsaved changes.
-  Saved photos open the same editor with Delete/Save controls. Changed crops
-  retain the photo's identity; unchanged Save closes without rewriting.
-  The modal blocks background navigation and conflicting operations. Preview
-  and busy state survive rotation; unsaved work is discarded after process
-  death. Saved photos can be used in custom games.
-- Sounds records microphone audio in a modal, stopping automatically after five
-  seconds or when Stop is pressed. Native AAC output may have up to 100 ms of
-  overhead; files longer than 5,100 ms are rejected and actual duration is retained.
-  Empty Sounds shows an Add Record button beneath its sound icon, alongside the
-  header plus action. Both open the same recording modal.
-  Preview supports Play/Pause, Cancel, and
-  explicit Save. Preview has a selected `Track N` name default that can be replaced;
-  duplicate names are allowed. Saved rows show names, playback progress, and confirmed Delete.
-  Renaming saved recordings is deferred.
-  Rotation preserves the recording/preview; leaving or backgrounding discards
-  unsaved work. Permission is requested only on Record. Save/Delete are guarded
-  against repeated taps, and the modal blocks underlying navigation.
-  The modal scrolls and resizes for the keyboard, including on Android 10.
-  Native capture, duration limits, playback, and recovery have been checked on a
-  physical Android 10 phone; broader device coverage and subjective speech-quality
-  assessment remain outside that verification.
-- Animals uses ten bundled image/audio pairs. Each randomized session has
-  ten rounds, each target once, and two shuffled choices with explicit correctness.
-  Children can tap or swipe an image bubble in any direction to choose it, even
-  if their finger leaves the bubble. Each gesture selects only its starting image.
-  Audio plays on entry and can be replayed. Wrong answers stay on the round;
-  correct answers hide the other choice, center/grow the bubble, and play success
-  audio together before advancing. Growth is capped at +30% and stays inside the
-  gameplay area. Completion shows a pulsing gold trophy inside the supplied
-  bubble background for at least three seconds, waiting for the complete yay
-  sound before returning Home.
-- Match Up is a separate placeholder destination. Back returns Home.
-- Game controls use `BubbleButton`: circular for icon-only controls and pill-shaped
-  for text, with configurable colors, border, and optional restrained neon glow.
-  Back is borderless; Replay is bordered. Both match the game title's blue.
+I am building Puzzle Bubbles for my toddler and for other toddlers. It ships with
+simple, ready-to-play games, and it also lets parents create custom games for their
+own child. Instead of choosing between generic stock pictures, a child sees what is
+familiar from real life: parents photograph family members, pets, and everyday
+objects, and record prompts in their own voices, in the languages and phrases
+they actually use at home. The child then matches a familiar voice to a familiar
+face or object, building connections between what they hear and what they see.
+
+The app is an MVP and is being developed step by step. More games will follow.
+Everything is local: there is no backend, no account, and no network access. Photos
+and recordings stay in the app's private storage on the parent's phone and are
+excluded from cloud backup, so personal family media never leaves the device.
+
+## Demo
+
+Short screen recordings (MP4) from the [v0.1.0 release](https://github.com/nboyko/PuzzleBubbles/releases/tag/v0.1.0):
+
+- [Add photos and record sounds in the Library](https://github.com/nboyko/PuzzleBubbles/releases/download/v0.1.0/add_to_lib.mp4)
+  — import and crop a photo, record a prompt in a parent's voice.
+- [Play a custom game](https://github.com/nboyko/PuzzleBubbles/releases/download/v0.1.0/play_custom_game.mp4)
+  — hear the recorded prompt and choose the matching photo.
+- [Edit and delete a custom game](https://github.com/nboyko/PuzzleBubbles/releases/download/v0.1.0/edit_delete_game.mp4)
+  — swipe a game to change its questions or remove it.
+
+## Features
+
+- **What's That?** — hear a sound and tap or swipe the matching picture. The
+  built-in **Animals** game has ten randomized rounds, forgiving wrong answers,
+  a success animation, and a trophy at the end.
+- **Custom games** — parents choose photos from their Library and pair each
+  question with their own recording (1–10 questions). Games can be edited and
+  deleted; photos and sounds used by a game are protected from deletion.
+- **Photos** — import one image at a time through the system picker (no media
+  permission needed) and crop it to a square.
+- **Sounds** — record short prompts (up to five seconds), name, preview, and save
+  them. All sounds are balanced to one common loudness.
+- **Made for small hands** — large targets, pictures over text, and selection by
+  tap or swipe in any direction.
+- **Match Up** — second game, in progress.
+
+## Tech highlights
+
+- Kotlin, Jetpack Compose, Navigation Compose, ViewModel, Coroutines/Flow.
+- Layered `presentation` / `domain` / `data` design. Screens use domain models and
+  stable asset IDs only, so storage can later move to files or a remote service
+  without changing game screens.
+- Room with exported schemas and non-destructive migrations (versions 1–4).
+- Crash-safe media storage: staged writes and recovery of interrupted saves/deletes.
+- Audio: microphone capture, and loudness normalization with `MediaCodec`
+  decoding/encoding.
+- Tests: JVM unit tests for game sessions and audio math; instrumented Compose UI,
+  storage, gesture, and audio tests.
 
 ## Architecture
 
-One Android `app` module, with sources under
-`app/src/main/java/com/example/puzzlebubbles/`:
+One Android `app` module under `app/src/main/java/com/example/puzzlebubbles/`:
 
-- `presentation/`: Compose screens, ViewModels, and Navigation Compose routes
-  (`home`, `library`, `library/photos`, `library/sounds`, `whats-that`,
-  `whats-that/play/{gameId}`, `create-game`, `edit-game/{gameId}`, `matching`);
-  game screens are grouped by mechanic. Photos and Sounds have destination-scoped
-  ViewModels and consume stable asset IDs.
-- `domain/`: catalog/content models and pure session generation/state transitions.
-  Static content stays separate from session progress; asset references are stable IDs.
-  `PhotoRepository` exposes Library photo IDs and creation times without file paths.
-  `SoundRepository` exposes recording IDs, names, durations, and creation times; separate
-  recorder and playback contracts keep native audio out of screen state.
-- `data/`: `GameRepository` implementation with a Kotlin preset, resource
-  resolvers, and single-instance `MediaPlayer` playback. `data/photos` handles
-  sampled decoding, EXIF orientation, center cropping, private WebP files, and
-  Room metadata (schema version 4, exported under `app/schemas/`). Saves and
-  deletes are serialized with reconciliation of interrupted operations.
-  `data/sounds` stores private AAC/MPEG-4 recordings, stages validated saves,
-  and reconciles interrupted writes and deletions. The existing `photos.db` has
-  additive migrations for sound metadata and custom games, preserving existing media.
-  `LibraryGameRepository` combines the bundled catalog with saved games; Room
-  transactions and foreign keys protect photo-pool/question references.
-  `PuzzleBubblesApplication` owns Library storage services; `MainActivity` wires the
-  rendering boundary and game dependencies. The What's That? ViewModel is scoped
-  to its navigation destination.
+- `presentation/` — Compose screens, ViewModels, and navigation, grouped by game.
+- `domain/` — content models, repository contracts, and pure session logic. Static
+  content stays separate from session state.
+- `data/` — repository implementations: bundled games, Room metadata, private photo
+  (WebP) and recording (AAC) files, and audio playback.
 
-Screen-scoped effects cancel feedback and completion timers on disposal and stop
-audio when leaving the game. Leaving and reopening starts a fresh session;
-session progress is not stored persistently. Blur-based icon glow is supported
-on Android 12+; older supported devices retain the unblurred icon and rim.
+Bundled source assets live under `assets/source/`; runtime copies are Android
+resources. See [asset conventions](docs/content-assets.md) for formats and IDs.
 
-Game content is bundled locally; imported photos and user recordings stay in
-app-owned storage and are excluded with their metadata from cloud backup and
-device transfer. Custom games reference these assets by stable IDs without copying them.
-There is no network integration. Bundled source assets live under `assets/source/`;
-their runtime assets are Android resources.
-See [asset conventions](docs/content-assets.md) for formats, paths, and IDs.
+## Build and run
 
-Photo selection uses AndroidX `PickVisualMedia`, including its system document
-fallback, without broad media permissions. On API 36, Google Photo Picker build
-36 (`com.google.android.photopicker`) returns cancellation without an image from
-Preview → Select; this build uses the single-image document picker instead when
-available. Other builds retain AndroidX's normal selection flow. Cancellation
-never imports or saves an image.
-
-## Build and checks
-
-Use Android Studio's configured Gradle JDK and Android SDK (compile/target SDK 36,
-minimum SDK 26). From the repository root on Windows:
+Open the project in Android Studio (compile/target SDK 36, minimum SDK 26), or from
+the repository root on Windows:
 
 ```powershell
 .\gradlew.bat :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
-.\gradlew.bat :app:connectedDebugAndroidTest
+.\gradlew.bat :app:connectedDebugAndroidTest   # needs an emulator or device
 ```
 
-The second command requires an emulator or device. These are verification
-commands, not claims that the current checkout has passed every check.
-Use a disposable test emulator for `connectedDebugAndroidTest`: its APK cleanup
-can uninstall the application and clear private Library/game data. For a device
-whose data must be retained, install APKs with `adb install -r` and run the
-instrumentation runner directly instead.
+Run instrumented tests on a disposable emulator: their cleanup can uninstall the
+app and clear its Library data.
 
-## Requirements and iteration workflow
+## Project docs
 
-- [MVP specification](docs/mvp-spec.md): intended product requirements.
-- [Current plan](docs/plan.md): agreed feature scope and acceptance criteria when a plan is needed.
-- [Iteration 1](docs/iterations/001-iteration.md): completed Home and What's That? milestone.
-- [Iteration 2](docs/iterations/002-iteration.md): Library functionality and verified phases.
-- [AGENTS.md](AGENTS.md): project rules and explicit `$finalize-feature` workflow.
+- [MVP specification](docs/mvp-spec.md) — product requirements in detail.
+- [Iteration 1](docs/iterations/001-iteration.md) and
+  [Iteration 2](docs/iterations/002-iteration.md) — verified milestones.
+- [AGENTS.md](AGENTS.md) — development rules and workflow.
 
-Finalization runs only when explicitly invoked. It verifies functionality against
-the agreed scope (an explicit request or the current plan), synchronizes affected
-documentation, reconciles the iteration record, and commits those changes together
-unless review only is requested.
-Regular coding tasks and commits do not trigger it. Small, clearly specified
-improvements can be recorded directly in their iteration phase without a feature
-plan. Iteration records describe verified functionality and limitations, without
-backlog sections or Git metadata.
+## Credits
+
+- Images (animals, game covers, gameplay images) are AI-generated for this project
+  or come from [Unsplash](https://unsplash.com) under the
+  [Unsplash License](https://unsplash.com/license).
+- Bundled sounds come from [Pixabay](https://pixabay.com) under the
+  [Pixabay Content License](https://pixabay.com/service/license-summary/).
+- Fonts: Lilita One and Baloo 2 under the SIL Open Font License 1.1; see
+  `app/src/main/assets/licenses/`.
+
+## License
+
+Copyright © 2026 Nataliia Boiko. All rights reserved.
+
+This repository is published for viewing and evaluation only. No license is granted
+to copy, modify, distribute, or use this code or its original assets, in whole or
+in part, without prior written permission. Third-party assets listed under Credits
+remain under their own licenses.

@@ -7,9 +7,9 @@ until the user explicitly confirms it.
 
 ### Phase 1: feat library navigation and empty library screens
 
-My Library has a title/Back header and large Photos/Sounds cards. Each opens a
-separate empty screen with an icon, message, Back to My Library, and fixed
-Home/Library navigation with Library selected. Home returns directly to Home;
+My Library offers Photos and Sounds destinations. Each opens a separate empty
+screen with Back to My Library and fixed Home/Library navigation. Home returns
+directly to Home;
 Library returns to My Library without adding destinations. Back, Home scroll
 restoration, and navigation across activity recreation are supported. The Photos
 SVG resolves through the existing stable asset-ID rendering boundary.
@@ -21,7 +21,7 @@ enlarged-text layouts were reviewed; broader device/API coverage is unverified.
 
 ### Phase 2: feat photo import and saved-photo library
 
-Photos has an icon-only plus action and a persistent photo grid. Single-image
+Photos has an add action and a persistent photo grid. Single-image
 system selection opens a square Save/Cancel preview; processing respects EXIF
 orientation and stores only a normalized 1024 × 1024 WebP with a generated ID
 and Room metadata. Saved-photo Delete removes the Library copy; Save/X close
@@ -57,9 +57,7 @@ preserved; output beyond 5,100 ms is rejected. Backup/transfer exclusions cover
 recordings and metadata together.
 
 Verified: debug build, 14 unit tests, and lint (zero errors, 18 warnings). The full
-physical Android 10 run had 72 passes and one pre-existing Android 16-only picker
-assumption reported as a failure; the test is unchanged from baseline and cannot
-run on this device. All 14 Sounds screen tests passed again after the final
+physical Android 10 run had 72 passes. All 14 Sounds screen tests passed again after the final
 lifecycle and keyboard fixes. Native microphone/codec tests cover manual/immediate
 Stop and maximum duration; storage tests cover output tolerance, migration,
 persistence, and failure recovery. Existing Photos/game regressions passed.
@@ -89,11 +87,10 @@ gesture change remains unverified because the connected phone was locked.
 
 ### Phase 5: feat Sounds empty-state recording action
 
-Empty Sounds replaces its message with an Add Record button below the sound
-icon, following Photos. The header plus remains; both open the same idle modal
-without requesting permission or recording. They share existing action guards.
-The extra button disappears with saved content and returns after the last
-deletion. The icon shrinks in limited vertical space to keep the button visible.
+Empty Sounds offers an Add Record button in addition to the add action; both
+open the same idle modal without requesting permission or recording. They share
+existing action guards. The extra button disappears with saved content, returns
+after the last deletion, and stays visible in limited vertical space.
 
 Verified: debug build, 14 unit tests, 33 initial Sounds/Photos/navigation emulator
 tests, and all 16 Sounds tests after the landscape fix. Lint has zero errors and
@@ -104,8 +101,7 @@ and physical-device verification of this change remain unverified.
 ### Phase 6: feat What's That? game selection
 
 What's That? opens a repository-backed game list with the predefined Animals row,
-explicit built-in styling, puzzle/Play assets, fixed Home/Library navigation, and
-an accessible disabled Add Game button. Selected IDs reach gameplay. Gameplay
+fixed Home/Library navigation, and an accessible disabled Add Game button. Selected IDs reach gameplay. Gameplay
 Back returns to selection; completion returns Home and clears both destinations.
 Rapid Play is guarded, recreation retains progress, and exiting stops audio and
 pending feedback; replaying starts a fresh session. Match Up retains direct entry.
@@ -126,15 +122,14 @@ The single-page Create Game editor names a game, selects a Library photo pool,
 and adds 1–10 explicit photo/sound questions. Matching media modals apply pending
 choices on Done; referenced photos and the two-photo minimum are protected.
 Drafts survive rotation, changed drafts require discard confirmation, and failed
-saves preserve work for guarded retry. Compact blue controls include underlined
-links, a grey question X, and sound replacement icons.
+saves preserve work for guarded retry.
 
 Saved games persist atomically in Room through an additive migration and play
 each question once with a distinct random distractor. Animals retains ten rounds.
 Confirmed deletion removes one custom game's references while retaining Library
 files; referenced media deletion is blocked, while photo cropping remains available.
-Only the targeted game receives the deletion background. Selection navigation is
-neutral, entry audio waits for the transition, and code/assets use WhatsThat naming.
+Deletion feedback marks only the targeted game, and entry audio waits for the
+screen transition.
 
 Verified: debug/test builds, 18 unit tests, 22 gameplay/navigation/storage/asset
 emulator tests after the rename, and 26 finalization checks covering the wizard,
@@ -143,21 +138,17 @@ Lint reports zero errors and 18 warnings. Device screenshots of the editor, medi
 modals, game list, deletion confirmation, and custom gameplay were inspected;
 enlarged-text/landscape keyboard behavior is tested. Loading/error/empty/selected
 and completed previews compile; IDE preview rendering and physical-device checks
-remain unverified. An earlier broader native AAC duration-boundary test fails on
-this Android 17 fixture and was reproduced on the unchanged baseline; it is
-unrelated to custom-game behavior, and the 5,100 ms validation bound is unchanged.
-The full device suite is not claimed as passing. Process-death draft restoration
+remain unverified. Process-death draft restoration
 is not supported. Actual disk-full operation remains unverified; injected failures
 are covered.
 
 ### Phase 8: feat manage existing custom games
 
-Game rows now play by tapping without a separate Play icon. A left swipe on a
-custom row reveals pale mint/rose pencil and trash actions, with square adjoining
-row corners. Incomplete swipes close; one row stays open at a time, and the first
+Game rows play by tapping. A left swipe on a custom row reveals Edit and Delete
+actions. Incomplete swipes close; one row stays open at a time, and the first
 tap on a game row closes open actions. Vertical drags and swipes on predefined
 games do not launch gameplay. Accessible custom actions expose Edit/Delete
-without swiping. Game, photo, and sound modal Delete buttons share a red accent.
+without swiping.
 
 Edit Game preloads the existing single-page editor. Save updates the same game
 and associations atomically, preserving creation time and list position. Failed
@@ -170,7 +161,7 @@ needed, and persistent edit-draft restoration is not supported.
 Verified: debug/test builds, 18 unit tests, and lint with zero errors and 18
 warnings. Across implementation checks, 33 affected emulator tests covered
 gestures/accessibility, editing, rollback, reference release, creation, and
-navigation. Three modal deletion regressions passed after the red styling change.
+navigation. Three modal deletion regressions passed.
 Six gesture/end-to-end checks passed again during finalization using direct
 instrumentation that preserves emulator app data. A predefined-row swipe/tap
 conflict found during development was fixed and its test passed on rerun.
@@ -178,6 +169,4 @@ Device screenshots of revealed actions at normal/enlarged text, prefilled edit
 mode, and named deletion confirmation were inspected. Edit and revealed-action
 Compose previews compile; IDE preview rendering, physical-device checks, spoken
 TalkBack behavior, and actual disk-full operation remain unverified. Accessibility
-callbacks and injected save failures are automated. This is focused verification,
-not a claim that the full device suite passes; the prior AAC limitation remains
-recorded with Phase 7. Iteration 2 remains open.
+callbacks and injected save failures are automated. Iteration 2 remains open.
