@@ -63,6 +63,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.example.puzzlebubbles.R
@@ -190,6 +191,8 @@ private fun GameTopBar(title: String, onBack: () -> Unit) {
         )
         Text(
             text = title,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
             color = GameTitleColor,
             fontFamily = GameTitleFontFamily,
             fontSize = 32.sp,
@@ -299,10 +302,12 @@ private fun ChoiceBubble(
         Canvas(Modifier.fillMaxSize()) {
             drawSoapBubble()
         }
+        val libraryPhoto = choice.imageAssetId.startsWith("library-photo:")
         AssetImage(
             assetId = choice.imageAssetId,
-            contentScale = ContentScale.Fit,
-            modifier = Modifier.fillMaxSize().padding(bubbleSize * .13f),
+            contentScale = if (libraryPhoto) ContentScale.Crop else ContentScale.Fit,
+            modifier = if (libraryPhoto) Modifier.fillMaxSize().padding(7.dp).clip(CircleShape)
+                else Modifier.fillMaxSize().padding(bubbleSize * .13f),
         )
         if (decorations.value > 0f) {
             WrongBubbles(alpha = decorations.value, modifier = Modifier.fillMaxSize())

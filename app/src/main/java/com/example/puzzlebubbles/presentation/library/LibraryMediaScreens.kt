@@ -128,6 +128,8 @@ private fun SoundsContent(
 ) {
     val covered = state.modal != null || state.deleteId != null
     val canAdd = !covered && !state.blocked && state.error !in listOf(SoundError.LOAD, SoundError.CLEANUP)
+    // While storage work blocks the screen, swallow system Back like the former disabled arrow.
+    BackHandler(enabled = state.blocked) {}
     BackHandler(enabled = covered || state.committing || state.cleaning) {
         if (!state.committing) {
             if (state.deleteId != null) onDeleteCancel() else onClose()
@@ -138,12 +140,8 @@ private fun SoundsContent(
             .then(if (covered) Modifier.clearAndSetSemantics {} else Modifier)
             .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                BubbleButton(onClick = { if (!covered && !state.blocked) onBack() }, iconAssetId = "ui-back",
-                    accessibilityLabel = stringResource(R.string.back), colors = listOf(SoundInk), showBorder = false)
                 Text(stringResource(R.string.sounds), Modifier.weight(1f).semantics { heading() },
                     color = SoundInk, fontFamily = HomeHeadingFontFamily, fontSize = 32.sp, fontWeight = FontWeight.Bold)
-                BubbleButton(onClick = onAdd, iconAssetId = "ui-plus", accessibilityLabel = stringResource(R.string.add_sound),
-                    colors = listOf(SoundAccent), enabled = canAdd)
             }
             Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
                 when {
@@ -158,7 +156,8 @@ private fun SoundsContent(
                         BubbleButton(onClick = onAdd, text = stringResource(R.string.add_record),
                             colors = listOf(SoundAccent), enabled = canAdd)
                     }
-                    else -> LazyColumn(Modifier.fillMaxSize().testTag("sounds-list"), contentPadding = PaddingValues(16.dp),
+                    else -> LazyColumn(Modifier.fillMaxSize().testTag("sounds-list"),
+                        contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 104.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         itemsIndexed(state.sounds, key = { _, sound -> sound.id }) { index, sound ->
                             Card(colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(24.dp)) {
@@ -177,13 +176,19 @@ private fun SoundsContent(
                         }
                     }
                 }
+                BubbleButton(onClick = onAdd, iconAssetId = "ui-plus", enabled = canAdd, diameter = 72.dp,
+                    accessibilityLabel = stringResource(R.string.add_sound),
+                    colors = listOf(Color.White), containerColors = listOf(SoundAccent), showBorder = false,
+                    modifier = Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 8.dp).testTag("add-sound-fab"))
             }
             if (state.modal == null && state.deleteId == null && state.error != SoundError.LOAD && state.error != null) {
                 SoundErrorText(state.error)
                 BubbleButton(onClick = onRetry, text = stringResource(R.string.retry), enabled = !state.blocked)
             }
             if (state.modal == null && playback.failed) Text(stringResource(R.string.sound_play_error), Modifier.padding(12.dp), color = SoundInk)
-            HomeNavigationBar(true, { if (!covered && !state.blocked) onHome() }, { if (!covered && !state.blocked) onBack() })
+            HomeNavigationBar(librarySelected = false, homeSelected = false,
+                onGamesSelected = { if (!covered && !state.blocked) onHome() },
+                onLibrarySelected = { if (!covered && !state.blocked) onBack() })
         }
         state.modal?.let { modal ->
             SoundModal(stringResource(R.string.record_sound), state.committing, onClose) {

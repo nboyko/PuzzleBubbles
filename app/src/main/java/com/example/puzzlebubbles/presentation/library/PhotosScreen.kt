@@ -96,16 +96,8 @@ private fun PhotosContent(
         )) {
             Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    BubbleButton(onClick = { if (modal == null) onBack() }, iconAssetId = "ui-back",
-                        accessibilityLabel = stringResource(R.string.back), colors = listOf(PhotoInk), showBorder = false)
                     Text(stringResource(R.string.photos), Modifier.weight(1f).semantics { heading() },
                         fontFamily = HomeHeadingFontFamily, fontWeight = FontWeight.Bold, fontSize = 32.sp, color = PhotoInk)
-                    BubbleButton(
-                        onClick = addPhoto,
-                        iconAssetId = "ui-plus", accessibilityLabel = stringResource(R.string.add_photo),
-                        colors = listOf(PhotoBlue),
-                        enabled = canAddPhoto,
-                    )
                 }
             }
             Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
@@ -125,7 +117,7 @@ private fun PhotosContent(
                     }
                     else -> LazyVerticalGrid(
                         columns = GridCells.Adaptive(136.dp), state = grid, modifier = Modifier.fillMaxSize().testTag("photos-grid"),
-                        contentPadding = PaddingValues(16.dp), horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 104.dp), horizontalArrangement = Arrangement.spacedBy(16.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
                         itemsIndexed(photos, key = { _, photo -> photo.id }) { index, photo ->
@@ -138,9 +130,14 @@ private fun PhotosContent(
                     }
                 }
                 if (busy && !loading && modal == null) CircularProgressIndicator()
+                BubbleButton(onClick = addPhoto, iconAssetId = "ui-plus", enabled = canAddPhoto, diameter = 72.dp,
+                    accessibilityLabel = stringResource(R.string.add_photo),
+                    colors = listOf(Color.White), containerColors = listOf(PhotoBlue), showBorder = false,
+                    modifier = Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 8.dp).testTag("add-photo-fab"))
             }
             if (modal == null && error == PhotoError.IMPORT) PhotoErrorText(error)
-            HomeNavigationBar(true, { if (modal == null) onHome() }, { if (modal == null) onBack() },
+            HomeNavigationBar(librarySelected = false, homeSelected = false,
+                onGamesSelected = { if (modal == null) onHome() }, onLibrarySelected = { if (modal == null) onBack() },
                 modifier = Modifier.alpha(if (modal == null) 1f else 0f))
         }
         modal?.let { modal -> PhotoModalContent(modal, busy, error,

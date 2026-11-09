@@ -123,8 +123,7 @@ class CustomGameFlowTest {
         compose.onNodeWithContentDescription("Round 1 of 1").assertIsDisplayed()
         capture("custom-gameplay")
         compose.onNodeWithContentDescription(ownedPhotos[0].id).performClick()
-        compose.waitUntil(10000) { compose.onAllNodesWithTag("home-content").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText("What's That?").performScrollTo().performClick()
+        compose.waitUntil(10000) { compose.onAllNodesWithTag("whats-that-selection").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithContentDescription("Delete game $name").assertDoesNotExist()
         revealActions()
         val editBounds = compose.onNodeWithContentDescription("Edit game $name").fetchSemanticsNode().boundsInRoot

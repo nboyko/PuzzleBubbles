@@ -230,6 +230,13 @@ class PhotosScreenTest {
         val photo = model.photos.single()
         val before = images.file(photo.id).readBytes()
         compose.onNodeWithContentDescription("Photo 1").performClick()
+        compose.waitForIdle()
+        val screenshot = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot()
+        try {
+            java.io.File(compose.activity.externalCacheDir, "circular-crop-guide.png").outputStream().use {
+                screenshot.compress(Bitmap.CompressFormat.PNG, 100, it)
+            }
+        } finally { screenshot.recycle() }
         compose.onNodeWithTag("photo-crop-viewport").performTouchInput {
             down(0, center - androidx.compose.ui.geometry.Offset(30f, 0f))
             down(1, center + androidx.compose.ui.geometry.Offset(30f, 0f))

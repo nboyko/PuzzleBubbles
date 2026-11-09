@@ -2,6 +2,7 @@ package com.example.puzzlebubbles
 
 import android.graphics.Bitmap
 import android.graphics.Color
+import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
@@ -119,8 +120,9 @@ class HomeNavigationTest {
             compose.onNodeWithText("Library").performClick()
             compose.onNodeWithText("My Library").assertIsDisplayed()
             compose.onNodeWithText("Back").assertDoesNotExist()
+            compose.onNodeWithContentDescription("Back").assertDoesNotExist()
             if (index == 0) {
-                compose.onNodeWithContentDescription("Back").assertIsDisplayed().performClick()
+                compose.onNode(hasText("Home") and hasAnyAncestor(hasTestTag("bottom-navigation"))).performClick()
             } else if (index == 1) {
                 pressBack()
             } else {
@@ -141,7 +143,10 @@ class HomeNavigationTest {
                 assertMediaReady(title)
                 compose.onNodeWithTag("inline-home-navigation").assertDoesNotExist()
                 compose.onNodeWithTag("bottom-navigation").assertIsDisplayed()
-                if (systemBack) pressBack() else compose.onNodeWithContentDescription("Back").performClick()
+                compose.onNodeWithContentDescription("Back").assertDoesNotExist()
+                compose.onNode(hasText("Library") and hasAnyAncestor(hasTestTag("bottom-navigation"))).assertIsNotSelected()
+                if (systemBack) pressBack()
+                else compose.onNode(hasText("Library") and hasAnyAncestor(hasTestTag("bottom-navigation"))).performClick()
                 compose.onNodeWithText("My Library").assertIsDisplayed()
             }
         }
@@ -195,7 +200,7 @@ class HomeNavigationTest {
             compose.activityRule.scenario.recreate()
             assertMediaReady("Photos")
             compose.onNodeWithTag("photos-grid").assertIsDisplayed()
-            compose.onNodeWithContentDescription("Back").performClick()
+            pressBack()
             compose.onNodeWithText("My Library").assertIsDisplayed()
             pressBack()
             assertHome()
@@ -220,6 +225,15 @@ class HomeNavigationTest {
         compose.onNode(hasText("Library") and hasAnyAncestor(hasTestTag("bottom-navigation")))
             .performClick()
         compose.onNodeWithText("My Library").assertIsDisplayed()
+        compose.waitForIdle()
+        androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+        Thread.sleep(250) // Allow the native Surface to present the new destination.
+        val screenshot = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot()
+        try {
+            java.io.File(compose.activity.externalCacheDir, "library-violet.png").outputStream().use {
+                screenshot.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it)
+            }
+        } finally { screenshot.recycle() }
     }
 
     private fun openGame(title: String) {

@@ -12,8 +12,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -59,11 +61,15 @@ fun PhotoCropViewport(
                 }) { drawImage(source.asImageBitmap(), filterQuality = FilterQuality.Medium) }
             }
             val scrim = Color(0xFF14223A).copy(alpha = .6f)
-            drawRect(scrim, Offset.Zero, Size(size.width, top))
-            drawRect(scrim, Offset(0f, top + side), Size(size.width, top))
-            drawRect(scrim, Offset(0f, top), Size(left, side))
-            drawRect(scrim, Offset(left + side, top), Size(left, side))
-            drawRect(Color.White.copy(alpha = .9f), Offset(left, top), Size(side, side), style = Stroke(2.dp.toPx()))
+            // The guide previews gameplay's circle; export still uses the same
+            // square crop region, preserving the pixels outside the circle.
+            val outside = Path().apply {
+                fillType = PathFillType.EvenOdd
+                addRect(Rect(0f, 0f, size.width, size.height))
+                addOval(Rect(left, top, left + side, top + side))
+            }
+            drawPath(outside, scrim)
+            drawCircle(Color.White.copy(alpha = .9f), radius = side / 2, style = Stroke(2.dp.toPx()))
         }
         if (bitmap == null) CircularProgressIndicator()
     }

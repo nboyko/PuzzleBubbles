@@ -22,6 +22,7 @@ class GameSelectionNavigationTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
     private val base = LocalGameRepository()
     private val loadedIds = mutableListOf<String>()
+    private var gameTitle = "Animals"
     private var loadGate: CompletableDeferred<Unit>? = null
     private var deleteGate: CompletableDeferred<Unit>? = null
     private var failDelete = false
@@ -43,7 +44,7 @@ class GameSelectionNavigationTest {
         }
         override fun getWhatsThatGame(id: String): WhatsThatGame {
             loadedIds += id
-            return base.getWhatsThatGame("whats-that").copy(id = id)
+            return base.getWhatsThatGame("whats-that").copy(id = id, title = gameTitle)
         }
         override suspend fun loadWhatsThatGame(id: String): WhatsThatGame {
             loadGate?.await()
@@ -190,15 +191,19 @@ class GameSelectionNavigationTest {
         assertEquals(List(2) { "whats-that-test-fixture" }, deletedIds)
     }
 
-    @Test fun libraryNavigationReplacesSelectionWithoutAnExtraBackDestination() {
+    @Test fun libraryBackReturnsToSelectionThenHome() {
         openSelection()
         compose.onNodeWithText("Library").performClick()
         settle()
         compose.onNodeWithText("My Library").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Back").assertDoesNotExist()
+        pressBack()
+        settle()
+        compose.onNodeWithTag("whats-that-selection").assertIsDisplayed()
+        compose.onNodeWithText("My Library").assertDoesNotExist()
         pressBack()
         settle()
         compose.onNodeWithTag("home-content").assertIsDisplayed()
-        compose.onNodeWithTag("whats-that-selection").assertDoesNotExist()
     }
 
     @Test fun selectedIdAndRapidPlayUseOneGameplayAndSelectionDestination() {
@@ -256,7 +261,18 @@ class GameSelectionNavigationTest {
         assertEquals(requests, audio.requests)
     }
 
-    @Test fun completionReturnsHomeAndClearsGameplayAndSelection() {
+    @Test fun longGameplayTitleUsesOneEllipsizedLine() {
+        gameTitle = "A very long custom game name that cannot fit on one line in the gameplay header"
+        openSelection()
+        play("Another Game")
+        val layouts = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+        compose.onNodeWithText(gameTitle).performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
+        assertEquals(1, layouts.single().lineCount)
+        assertTrue(layouts.single().isLineEllipsized(0))
+        compose.onNodeWithContentDescription("Back").assertIsDisplayed()
+    }
+
+    @Test fun completionReturnsToSelectionAndReplayingStartsFresh() {
         openSelection()
         play()
         repeat(10) { index ->
@@ -270,11 +286,13 @@ class GameSelectionNavigationTest {
         compose.onNodeWithContentDescription("Game complete").assertIsDisplayed()
         compose.runOnIdle { audio.completion.complete(Unit) }
         settle()
+        compose.onNodeWithTag("whats-that-selection").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Game complete").assertDoesNotExist()
+        play()
+        compose.onNodeWithContentDescription("Round 1 of 10").assertIsDisplayed()
+        pressBack(); settle()
+        compose.onNodeWithTag("whats-that-selection").assertIsDisplayed()
+        pressBack(); settle()
         compose.onNodeWithTag("home-content").assertIsDisplayed()
-        compose.onNodeWithTag("whats-that-selection").assertDoesNotExist()
-        compose.activityRule.scenario.onActivity {
-            assertFalse("Home must not have a completed game or selection to navigate Back to",
-                it.onBackPressedDispatcher.hasEnabledCallbacks())
-        }
     }
 }

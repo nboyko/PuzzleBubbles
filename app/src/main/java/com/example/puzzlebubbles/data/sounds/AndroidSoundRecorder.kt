@@ -64,7 +64,11 @@ class AndroidSoundRecorder(private val context: Context, private val files: Soun
             // A max-duration callback may arrive before or after native stopping. Always
             // release before validating the finished file; never preview just on the callback.
             try { runCatching { current.stop() } } finally { releaseRecorder() }
-            SoundDraft("sound-draft:$id", files.duration(files.draft(id)))
+            val draft = files.draft(id)
+            // Phone microphones record far below bundled sounds; calibrate before preview
+            // so preview and gameplay play the same file. A failure keeps the original.
+            runCatching { SoundNormalizer.normalize(draft) { files.duration(it) } }
+            SoundDraft("sound-draft:$id", files.duration(draft))
         }
     }
 

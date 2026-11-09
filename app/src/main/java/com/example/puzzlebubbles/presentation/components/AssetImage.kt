@@ -24,7 +24,7 @@ fun AssetImage(
     colorFilter: ColorFilter? = null,
 ) {
     if (assetId.startsWith("library-photo:")) {
-        PhotoAssetImage(assetId, modifier, thumbnail = false, description = contentDescription)
+        PhotoAssetImage(assetId, modifier, thumbnail = false, description = contentDescription, contentScale = contentScale)
         return
     }
     Image(

@@ -18,6 +18,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.io.File
+import java.util.concurrent.ConcurrentHashMap
+import com.example.puzzlebubbles.data.sounds.SoundLevels
+import com.example.puzzlebubbles.data.sounds.SoundNormalizer
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
@@ -32,6 +35,24 @@ class LocalAudioPlayer(context: Context, private val soundFile: ((String) -> Fil
     private var focus: AudioFocusRequest? = null
     private val attributes = AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA)
         .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build()
+    /** Playback volume per bundled asset, measured once so all sounds share one loudness. */
+    private val bundledVolumes = ConcurrentHashMap<String, Float>()
+
+    init {
+        scope.launch(Dispatchers.Default) {
+            for (id in LocalAudioAssetResolver.audioAssetIds) {
+                runCatching {
+                    applicationContext.resources.openRawResourceFd(LocalAudioAssetResolver.resolveAudio(id)).use { fd ->
+                        SoundNormalizer.decode { it.setDataSource(fd.fileDescriptor, fd.startOffset, fd.length) }
+                    }
+                }.onSuccess { bundledVolumes[id] = SoundLevels.playbackVolume(SoundLevels.level(it)) }
+            }
+        }
+    }
+
+    /** Normalized volume for a bundled asset; effects sit [SFX_OFFSET] below content. */
+    internal fun bundledVolume(assetId: String): Float =
+        (bundledVolumes[assetId] ?: 1f) * if (assetId.startsWith("sfx-")) SFX_OFFSET else 1f
 
     override fun play(assetId: String) {
         if (assetId.startsWith("library-sound:")) {
@@ -43,6 +64,8 @@ class LocalAudioPlayer(context: Context, private val soundFile: ((String) -> Fil
         val created = MediaPlayer.create(applicationContext, LocalAudioAssetResolver.resolveAudio(assetId))
             ?: error("Unable to create audio player for asset: $assetId")
         player = created
+        val volume = bundledVolume(assetId)
+        created.setVolume(volume, volume)
         created.setOnCompletionListener { completed ->
             completed.release()
             if (player === completed) player = null
@@ -164,4 +187,9 @@ class LocalAudioPlayer(context: Context, private val soundFile: ((String) -> Fil
     }
 
     override fun release() { stop(); scope.cancel() }
+
+    private companion object {
+        /** Short, bright feedback effects sound louder at equal measured level: -6 dB. */
+        const val SFX_OFFSET = 0.5f
+    }
 }

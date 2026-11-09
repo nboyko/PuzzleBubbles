@@ -44,8 +44,8 @@
     <string name="discard_game_message">Your changes won\'t be saved.</string>
     <string name="discard_game">Discard</string>
     <string name="keep_editing">Keep Editing</string>
-    <string name="photo_in_use">This photo is used by a custom game. Delete the game first.</string>
-    <string name="sound_in_use">This sound is used by a custom game. Delete the game first.</string>
+    <string name="photo_in_use">This photo is used in a game. Remove it from the game first.</string>
+    <string name="sound_in_use">This sound is used in a game. Remove it from the game first.</string>
     <string name="app_name">Puzzle Bubbles</string>
     <string name="game_coming_soon">Game coming soon</string>
     <string name="matching_placeholder">Find the pictures that go together.</string>

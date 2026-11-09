@@ -52,8 +52,14 @@ class SoundStorageTest {
         return SoundDraft("sound-draft:$id", store.duration(file))
     }
     @Test fun nativeOutputToleranceIsBoundedAndActualDurationIsPreserved() = runBlocking {
+        // Encoder priming/padding differs between devices, so measure it first and
+        // size the fixture to land inside the 5,001-5,100 ms tolerance window.
+        val (probeId, probeFile) = store.newDraft()
+        aacFixture(probeFile, 1_000)
+        val overhead = store.duration(probeFile) - 1_000
+        store.discard(probeId)
         val (acceptedId, acceptedFile) = store.newDraft()
-        aacFixture(acceptedFile, 5050)
+        aacFixture(acceptedFile, (5_050 - overhead).toInt())
         val duration = store.duration(acceptedFile)
         assertTrue("Expected bounded native overhead: $duration", duration in 5001..5100)
         val saved = repository.save(SoundDraft("sound-draft:$acceptedId", duration), "Short recording")

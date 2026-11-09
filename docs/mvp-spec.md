@@ -109,17 +109,19 @@ or a floating container. Icons have small, matching-color labels underneath;
 Home uses the existing games icon. The active icon sits in a raised soap bubble
 with a close, smoothly rounded cutout. Touch feedback highlights only the icon
 and label, with no background ripple. The bar stays visible while scrolling.
-Library opens **My Library**, with a game-style title and Back arrow, without
-the logo, top tabs, or bottom Back button. Photos and Sounds cards lead to
-separate destinations with empty placeholders when needed. Those child screens keep Back to My Library and the
-fixed Home/Library navigation bar with Library selected. Home returns to Home;
+Library opens **My Library**, with a game-style title, without a Back arrow,
+logo, top tabs, or bottom Back button. System Back returns to the screen that
+opened My Library (Home or Game Selection); its Home tab returns to Home. Photos and Sounds cards lead to
+separate destinations with empty placeholders when needed. Those child screens have no header Back
+arrow; system Back returns to My Library. They keep the fixed Home/Library
+navigation bar with neither destination selected. Home returns to Home;
 Library returns to My Library without adding destinations. Do not add sample
 Library content or change existing game audio.
 
 The agreed Add Photo phase extends Photos with a single-image system picker
 (including its document-picker fallback) and an explicit-action preview modal.
-Use an icon-only plus button on the right of the Photos title, with the accessible
-label Add Photo. A system document-picker compatibility fallback is also permitted
+Photos and Sounds use the same filled circular plus button as Add Game, floating
+at the bottom right above navigation, with accessible labels Add Photo and Add Sound. A system document-picker compatibility fallback is also permitted
 for a picker build that cannot reliably return a selected image.
 Photos retains bottom navigation; the modal covers it. Save stores only a
 center-cropped 1024 × 1024 WebP in private app storage, with generated stable IDs
@@ -131,8 +133,13 @@ remain outside that phase.
 
 The agreed Crop Editor phase replaces this preview with a shared modal editor
 over Photos, with a rounded panel and dimmed background rather than a separate
-page. It supports new and saved photos: a fixed square viewport, constrained pan/pinch zoom up to 4×,
-and 1024 × 1024 WebP output. Tapping a saved photo opens the editor directly,
+page. It supports new and saved photos: a circular guide inscribed in the fixed
+square crop region, constrained pan/pinch zoom up to 4×,
+and 1024 × 1024 WebP output.
+The guide dims the area outside the circle, but export keeps the full square,
+including its corners. In gameplay, Library photos fill the image circle using
+center-cropping and circular clipping; bundled artwork retains its existing fit.
+Tapping a saved photo opens the editor directly,
 with Delete/Save below and X at the top right to cancel. New photos use
 a full-width Save button with a top-right X and have no Cancel, Delete, or header Back arrow. The editor
 has no visible title. Back or tapping the dimmed backdrop cancels editing;
@@ -143,8 +150,8 @@ Re-editing uses the currently stored image, without retaining originals.
 These paragraphs define requirements, not implementation status.
 
 The agreed **Record and Manage Library Sounds** feature is another phase of
-Iteration 2. Sounds retains the fixed Home/Library navigation, with Library
-selected; its recording modal covers and blocks the screen and navigation.
+Iteration 2. Sounds retains the fixed Home/Library navigation, with neither
+destination selected; its recording modal covers and blocks the screen and navigation.
 The header plus opens the modal without requesting microphone access. When Sounds
 is empty, show the sound icon with a duplicate **Add Record** button beneath it,
 following the Photos empty-state pattern, instead of a "No sounds yet" message.
@@ -157,7 +164,12 @@ Record mono AAC in an MPEG-4 (`.m4a`) container, with a five-second recorder lim
 manual Stop, and a visible timer. Keep the recorder and UI limit at 5,000 ms;
 allow at most 100 ms of native AAC/container output overhead (5,100 ms total).
 Validate that bound, preserve the actual duration, and reject longer output
-without trimming or transcoding. Preview only valid finalized recordings. Preview
+without trimming. All app sounds are balanced to one common loudness target,
+not to any particular sound. Before preview, re-encode each recording once with
+gain that reaches the target, without clipping and with at most +20 dB boost; if
+calibration fails or its output is invalid, keep the original recording. Bundled
+sounds are measured and turned down to the target at playback. Feedback effects
+(pop, game complete) play 6 dB below the target. Preview only valid finalized recordings. Preview
 supports Play/Pause, a non-seekable progress line, Cancel, and explicit Save; X,
 Back, and backdrop taps cancel outside committing operations. Never save
 automatically. Rotation preserves the current session and its original deadline;
@@ -207,7 +219,7 @@ Selecting What's That? opens its Game Selection screen. Selecting the built-in
 The selection screen has no header, title, or header Back arrow. It uses the fixed
 Home/Library bottom navigation, with neither destination selected on Game Selection.
 Home returns to Home; Library
-opens My Library without leaving an extra selection destination behind it.
+opens My Library on top of selection, so system Back returns to Game Selection.
 A filled circular Add Game plus button floats at the bottom right above navigation,
 with list padding so it cannot cover the last row. Its accessible label is
 Add Game, and it opens the custom-game editor described below.
@@ -222,8 +234,9 @@ previews and tests.
 
 Selection system Back returns to Home. Gameplay's Back arrow and system
 Back return to the previous selection screen. Automatic game completion retains
-its existing timing/audio and returns to Home, removing gameplay and selection
-from the back stack. Guard repeated Play taps and preserve destinations through
+its existing timing/audio and returns to the games list, removing completed
+gameplay from the back stack. Gameplay titles use one line with ellipsis for
+overflow. Guard repeated Play taps and preserve destinations through
 activity recreation. Opening selection does not play gameplay audio; leaving
 gameplay stops audio and pending work, and starting again creates a fresh session.
 
@@ -268,7 +281,7 @@ distractor from the selected image pool; Animals retains ten rounds. Media may
 be reused across questions. Persist complete games and stable Library references
 atomically in Room without copying files. Referenced pool photos and question
 sounds cannot be deleted; photo cropping remains allowed. Use a generic
-"Delete the game first" explanation without game names. Custom-game rows reveal
+"Remove it from the game first" explanation without game names. Custom-game rows reveal
 Edit followed by Delete on a right-to-left swipe, without leaving the screen.
 An incomplete swipe snaps closed; a completed swipe exposes both actions and
 keeps part of the main row visible. Square the shifted row's right corners to

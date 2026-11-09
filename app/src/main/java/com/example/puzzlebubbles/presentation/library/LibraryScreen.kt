@@ -44,14 +44,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.puzzlebubbles.R
 import com.example.puzzlebubbles.presentation.components.AssetImage
-import com.example.puzzlebubbles.presentation.components.BubbleButton
 import com.example.puzzlebubbles.presentation.home.HomeNavigationBar
 import com.example.puzzlebubbles.ui.theme.GameTitleFontFamily
 import com.example.puzzlebubbles.ui.theme.HomeHeadingFontFamily
 
 @Composable
 fun LibraryScreen(
-    onBack: () -> Unit,
+    onHome: () -> Unit,
     onPhotosSelected: () -> Unit,
     onSoundsSelected: () -> Unit,
     modifier: Modifier = Modifier,
@@ -61,25 +60,15 @@ fun LibraryScreen(
             Brush.linearGradient(listOf(Color(0xFFF0FCFF), Color(0xFFF2EEFF), Color(0xFFFFF8F0))),
         ).windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            BubbleButton(
-                onClick = onBack,
-                iconAssetId = "ui-back",
-                accessibilityLabel = stringResource(R.string.back),
-                colors = listOf(Color(0xFF166CAF)),
-                showBorder = false,
-            )
-            Text(
-                text = stringResource(R.string.my_library),
-                fontFamily = GameTitleFontFamily,
-                fontSize = 32.sp,
-                color = Color(0xFF166CAF),
-                modifier = Modifier.weight(1f).semantics { heading() },
-            )
-        }
+        // No Back arrow: system Back returns to whichever screen opened My Library.
+        Text(
+            text = stringResource(R.string.my_library),
+            fontFamily = GameTitleFontFamily,
+            fontSize = 32.sp,
+            color = Color(0xFF166CAF),
+            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)
+                .padding(horizontal = 24.dp, vertical = 12.dp).semantics { heading() },
+        )
         BoxWithConstraints(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.TopCenter) {
             val wide = maxWidth >= 700.dp
             LazyVerticalGrid(
@@ -105,7 +94,7 @@ fun LibraryScreen(
         }
         HomeNavigationBar(
             librarySelected = true,
-            onGamesSelected = onBack,
+            onGamesSelected = onHome,
             onLibrarySelected = {},
         )
     }
@@ -117,8 +106,9 @@ private fun LibrarySectionCard(title: String, iconAssetId: String, accent: Color
         onClick = onClick,
         modifier = Modifier.fillMaxWidth().semantics { role = Role.Button },
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = .92f)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        // Solid white fill without shadow, so no gray edge shows around the card.
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().heightIn(min = 128.dp).padding(20.dp),

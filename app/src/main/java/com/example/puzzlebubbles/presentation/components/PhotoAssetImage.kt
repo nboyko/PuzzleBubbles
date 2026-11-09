@@ -31,9 +31,11 @@ val LocalPhotoImages = staticCompositionLocalOf<PhotoImageStore> { error("Photo 
 
 /** File/bitmap lookup stays at the Android rendering boundary, never in screen models. */
 @Composable
-fun PhotoAssetImage(assetId: String, modifier: Modifier, thumbnail: Boolean, description: String? = null, revision: Long = 0) {
+fun PhotoAssetImage(assetId: String, modifier: Modifier, thumbnail: Boolean, description: String? = null, revision: Long = 0,
+    contentScale: ContentScale = ContentScale.Fit,
+) {
     val bitmap by photoBitmap(assetId, thumbnail, revision)
-    if (bitmap != null) Image(bitmap!!.asImageBitmap(), description, modifier, contentScale = ContentScale.Fit)
+    if (bitmap != null) Image(bitmap!!.asImageBitmap(), description, modifier, contentScale = contentScale)
     else Box(modifier.background(Color(0xFFE7EFF8)))
 }
 

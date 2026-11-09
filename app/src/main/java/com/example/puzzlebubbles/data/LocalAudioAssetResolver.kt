@@ -4,6 +4,11 @@ import androidx.annotation.RawRes
 import com.example.puzzlebubbles.R
 
 object LocalAudioAssetResolver {
+    val audioAssetIds = listOf(
+        "cat-audio", "cow-audio", "dog-audio", "goat-audio", "monkey-audio", "mouse-audio",
+        "parrot-audio", "pig-audio", "rabbit-audio", "sheep-audio", "sfx-pop", "sfx-game-complete",
+    )
+
     @RawRes
     fun resolveAudio(assetId: String): Int = when (assetId) {
         "cat-audio" -> R.raw.content_cat

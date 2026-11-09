@@ -207,6 +207,16 @@ The recorder maximum and UI deadline remain 5,000 ms. Permit at most 100 ms of
 native output overhead: validate positive actual duration up to 5,100 ms before
 Preview/Save and during reconciliation. Keep the actual duration in metadata
 and playback; reject longer output without trimming, transcoding, or clamping.
+The only re-encode is loudness normalization of the draft before Preview: decode,
+apply one gain so the active RMS (50 ms windows within 20 dB of the loudest)
+reaches the common target 0.08 (about -22 dBFS), limited to -1 dBFS peaks and
++20 dB, then write the same AAC/MPEG-4 format. Its output must pass the same
+duration validation; otherwise the original draft is kept.
+
+Bundled audio uses the same measurement: each asset is decoded once at startup
+and played at the volume that brings it down to the target (effects 6 dB lower).
+Playback cannot boost, so bundled exports must not be quieter than the target;
+an instrumented test enforces this for every asset.
 Do not copy recordings into `assets/source/` or Android resources, transcode them
 into bundled formats, or store binary audio in Room. Bundled audio conventions
 above remain unchanged.

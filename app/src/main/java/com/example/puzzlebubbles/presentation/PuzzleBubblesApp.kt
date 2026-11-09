@@ -84,7 +84,7 @@ fun PuzzleBubblesApp(
             }
             composable("library") {
                 LibraryScreen(
-                    onBack = { navController.popBackStack() },
+                    onHome = { navController.popBackStack("home", inclusive = false) },
                     onPhotosSelected = { navController.navigate("library/photos") { launchSingleTop = true } },
                     onSoundsSelected = { navController.navigate("library/sounds") { launchSingleTop = true } },
                     modifier = Modifier.fillMaxSize(),
@@ -141,7 +141,6 @@ fun PuzzleBubblesApp(
                     onLibrary = {
                         if (!selection.deleting && navController.currentBackStackEntry?.destination?.route == "whats-that") {
                             navController.navigate("library") {
-                                popUpTo("home")
                                 launchSingleTop = true
                             }
                         }
@@ -206,7 +205,7 @@ fun PuzzleBubblesApp(
                     onReplay = whatsThatViewModel::replayAudio,
                     onFeedbackFinished = whatsThatViewModel::finishFeedback,
                     onBack = { navController.popBackStack() },
-                    onGameComplete = { navController.popBackStack("home", inclusive = false) },
+                    onGameComplete = { navController.popBackStack("whats-that", inclusive = false) },
                     modifier = screenModifier,
                 )
             }
