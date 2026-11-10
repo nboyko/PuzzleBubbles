@@ -1,8 +1,6 @@
 # Iteration 2: Library functionality
 
-Status: **In progress**. Phases 1–8 are verified; the full iteration is not finished
-until the user explicitly confirms it.
-
+Status: **Finished**.
 ## Verified phases
 
 ### Phase 1: feat library navigation and empty library screens
@@ -169,4 +167,4 @@ Device screenshots of revealed actions at normal/enlarged text, prefilled edit
 mode, and named deletion confirmation were inspected. Edit and revealed-action
 Compose previews compile; IDE preview rendering, physical-device checks, spoken
 TalkBack behavior, and actual disk-full operation remain unverified. Accessibility
-callbacks and injected save failures are automated. Iteration 2 remains open.
+callbacks and injected save failures are automated.
